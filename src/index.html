@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Polyglot — мови з нуля до B2 для україномовних</title>
+<meta name="description" content="Тренажер мов для україномовних: англійська, болгарська, німецька й словацька з нуля — уроки, вправи, слова, озвучення, мій словник. Прогрес кожної мови зберігається окремо.">
+<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#181e29" media="(prefers-color-scheme: dark)">
+<!-- manifest, іконки, sw.js і пакети langs/*.js у зібраному вигляді створює build.mjs у docs/; у src/ (розробка) перших трьох немає, і це нормально -->
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-title" content="Polyglot">
+<!-- Онлайн-голос (core.js → PG.TTS) і словниковий сервіс (пакет en) не мають отримувати адресу сторінки -->
+<meta name="referrer" content="no-referrer">
+<!-- Іконку вкладки views2.js → applyFlag малює з прапора мови навчання (або з логотипа, поки мову не вибрано) -->
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body class="no-lang">
+<!-- Логотип: дві репліки розмови в кольорах прапора України. З нього build.mjs (tools/icons.mjs) малює PNG-іконки додатка,
+     тому лише rect / circle / path із заливкою; він же — на екрані вибору мови й на вкладці, поки мову не вибрано -->
+<span id="app-logo" hidden><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" aria-hidden="true"><rect width="512" height="512" fill="#1d4ed8"/><path d="M196 84H420C443 84 462 103 462 126V258C462 281 443 300 420 300H396V356L338 300H196C173 300 154 281 154 258V126C154 103 173 84 196 84Z" fill="#ffd500"/><path d="M92 196H316C339 196 358 215 358 238V370C358 393 339 412 316 412H176L118 466V412H92C69 412 50 393 50 370V238C50 215 69 196 92 196Z" fill="#ffffff"/><circle cx="134" cy="304" r="24" fill="#1d4ed8"/><circle cx="204" cy="304" r="24" fill="#1d4ed8"/><circle cx="274" cy="304" r="24" fill="#1d4ed8"/></svg></span>
+<header class="top"><div class="top-inner"><a class="brand" href="#/languages" title="Змінити мову" style="text-decoration:none;color:inherit"><span class="logo" id="lang-flag"></span><span class="brand-name">Polyglot</span><span class="lang-name" id="lang-name"></span></a><nav class="tabs" id="nav"></nav></div></header>
+<main id="view"><div class="card">Завантаження…</div></main>
+<!-- Порядок важливий: реєстр мов → рушій → екрани. Мовні пакети вантажить core.js → PG.loadPack, коли мову вибрано -->
+<script src="core/langs.js"></script>
+<script src="core/core.js"></script>
+<script src="core/exercises.js"></script>
+<script src="core/dict.js"></script>
+<script src="core/views.js"></script>
+<script src="core/dictview.js"></script>
+<script src="core/views2.js"></script>
+</body>
+</html>

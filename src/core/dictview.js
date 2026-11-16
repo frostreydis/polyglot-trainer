@@ -1,0 +1,291 @@
+/* Екрани словника: #/dict — список і додавання, #/dict/io — імпорт та експорт, #/dict/practice — тренування */
+(function (PG) {
+  'use strict';
+  const esc = PG.esc, $ = (s, r) => (r || document).querySelector(s), $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
+  const view = () => document.getElementById('view');
+  const D = PG.Dict;
+  // autocorrect / spellcheck вимкнено: телефон «виправляв» би слова мови навчання, а підкреслення заважало б
+  const INP = 'autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"';
+  // Знімок для «Скасувати імпорт» живе лише до перезавантаження сторінки: це страховка на хвилину, а не історія змін
+  let lastImport = null;
+  const ins = () => PG.L.names.ins;
+  const tag = (v) => (PG.variantInfo(v) || {}).tag || '';
+
+  function statusPill(w) {
+    const c = D.card(w.word);
+    if (!c) return '<span class="pill gray">нове</span>';
+    const d = c.due - PG.today();
+    return d <= 0 ? '<span class="pill amber">повторити сьогодні</span>' : '<span class="pill green">через ' + d + ' дн.</span>';
+  }
+  function order() {
+    const idx = PG.S.dict.map((_, i) => i), how = PG.S.ui.dictSort, w = PG.S.dict;
+    if (how === 'az') idx.sort((a, b) => w[a].word.localeCompare(w[b].word, PG.L.htmlLang, { sensitivity: 'base' }));
+    else if (how === 'due') {
+      const due = (i) => { const c = D.card(w[i].word); return c ? c.due : -1e9; };
+      idx.sort((a, b) => due(a) - due(b));
+    } else idx.sort((a, b) => (w[b].added || '').localeCompare(w[a].added || '') || b - a);
+    return idx;
+  }
+  function rowHtml(w, i) {
+    const v = PG.variant(), o = PG.otherVariant(v);
+    return '<div class="dict-row" data-i="' + i + '" data-text="' + esc(PG.fold(w.word + ' ' + w.uk + ' ' + (w.note || '') + ' ' + (w.ex || ''))) + '">' +
+      '<div class="dict-main"><div class="dict-en">' + PG.sayHtml(w.word, PG.sayText(w.word)) + (w.ipa ? ' <span class="ipa">' + esc(w.ipa) + '</span>' : '') + ' ' + statusPill(w) + '</div>' +
+      '<div class="dict-uk">' + esc(w.uk) + (w.note ? ' <span class="small muted">· ' + esc(w.note) + '</span>' : '') + '</div>' +
+      (w.ex ? '<div class="dict-ex small">' + PG.sayHtml(w.ex) + '</div>' : '') + '</div>' +
+      '<div class="dict-actions"><button class="ic" data-act="say" title="Послухати">🔊</button><button class="ic" data-act="slow" title="Повільно">🐢</button>' +
+      (o ? '<button class="ic" data-act="alt" title="Послухати: ' + esc(PG.variantInfo(o).name) + ' вимова">' + esc(tag(o)) + '</button>' : '') +
+      (D.nativeUrl(w, v) ? '<button class="ic" data-act="native" title="Запис живої людини">🎙️</button>' : '') +
+      '<button class="ic" data-act="edit" title="Редагувати' + (D.canLookup() ? ', транскрипція' : '') + ', словники">✎</button></div></div>';
+  }
+  function editHtml(w) {
+    const links = PG.L.dict && PG.L.dict.links ? PG.L.dict.links(w.word) : [];
+    return '<div class="dict-edit"><div class="grid g2">' +
+      '<label class="small muted">' + esc(PG.cap(ins())) + '<input type="text" class="e-en" lang="' + PG.L.htmlLang + '" ' + INP + ' value="' + esc(w.word) + '"></label>' +
+      '<label class="small muted">Переклад<input type="text" class="e-uk" lang="uk" value="' + esc(w.uk) + '"></label>' +
+      '<label class="small muted">Примітка<input type="text" class="e-note" lang="uk" value="' + esc(w.note || '') + '"></label>' +
+      '<label class="small muted">Транскрипція<input type="text" class="e-ipa" ' + INP + ' value="' + esc(w.ipa || '') + '"></label></div>' +
+      '<label class="small muted">Приклад<input type="text" class="e-ex" lang="' + PG.L.htmlLang + '" ' + INP + ' value="' + esc(w.ex || '') + '"></label>' +
+      '<div class="row" style="margin-top:8px"><button class="btn primary small" data-act="save">Зберегти</button><button class="btn small" data-act="cancel">Скасувати</button>' +
+      (D.canLookup() ? '<button class="btn small" data-act="lookup" title="Знайти транскрипцію й запис носія">🔎 Транскрипція</button>' : '') +
+      links.map((l) => '<a class="btn small" href="' + esc(l[1]) + '" target="_blank" rel="noopener noreferrer" title="' + esc(l[2] || '') + '">' + esc(l[0]) + '</a>').join('') +
+      '<span class="spacer"></span><button class="btn small danger" data-act="del">✕ Видалити</button></div></div>';
+  }
+
+  function renderDict(sub) {
+    if (sub === 'io') return renderIO();
+    if (sub === 'practice') return renderPractice();
+    const n = PG.S.dict.length, q = PG.srsQueue('my'), v = PG.variant(), o = PG.otherVariant(v), U = PG.L.ui, look = D.canLookup();
+    view().innerHTML = PG.views.voiceBanner() +
+      '<div class="card"><div class="row"><h1 style="margin:0">📒 Мій словник</h1><span class="spacer"></span><span class="pill">' + n + ' ' + plural(n, 'слово', 'слова', 'слів') + '</span></div>' +
+      '<p class="small muted">' + esc(U.dictIntro) + ' 🔊 — вимова, 🐢 — повільно' + (o ? ', ' + esc(tag(o)) + ' — інший акцент' : '') + (look ? ', 🎙️ — запис живої людини (якщо є)' : '') + '. ✎ — редагувати' + (look ? ', транскрипція' : '') + ' і словники.</p>' +
+      '<div class="row"><a class="btn primary" href="#/words/review/my">🃏 Повторити (' + q.total + ')</a><a class="btn" href="#/dict/practice">🎯 Тренування</a><a class="btn" href="#/dict/io">⇅ Імпорт / експорт</a>' +
+      (D.missing().length ? '<button class="btn" id="d-fill" title="Знайти транскрипцію й записи носіїв для слів, у яких їх ще немає">🔎 Транскрипція (' + D.missing().length + ')</button>' : '') +
+      (o ? '<span class="spacer"></span><span class="small muted">' + esc(PG.cap(N_nom())) + ':</span><span class="seg" role="group" title="Варіант мови: голос, транскрипція й правопис у тренажері">' + PG.variants().map((x) => '<button data-acc="' + x.id + '" class="' + (x.id === v ? 'active' : '') + '" title="' + esc(PG.cap(x.name)) + '">' + PG.flagHtml(PG.code, x.id) + ' ' + esc(x.tag) + '</button>').join('') + '</span>' : '') + '</div>' +
+      (o ? '<p class="small muted" style="margin:8px 0 0">Ваші слова показуються так, як ви їх записали; транскрипція й записи носіїв підбираються під вибраний варіант.</p>' : '') + '</div>' +
+      '<div class="card" id="d-add"><h3 style="margin-top:0">＋ Додати слово</h3><div class="grid g2">' +
+      '<label class="small muted">' + esc(PG.cap(ins())) + '<span class="row nowrap"><input type="text" id="d-en" lang="' + PG.L.htmlLang + '" ' + INP + ' placeholder="' + esc(U.dictWordPh) + '" maxlength="200"><button class="btn" id="d-en-say" title="Послухати">🔊</button></span></label>' +
+      '<label class="small muted">Переклад<input type="text" id="d-uk" lang="uk" placeholder="' + esc(U.dictUkPh) + '" maxlength="300"></label></div><div id="d-kb"></div>' +
+      '<details id="d-more"><summary class="small">Примітка, приклад, транскрипція</summary><div class="grid g2" style="margin-top:6px">' +
+      '<input type="text" id="d-note" lang="uk" placeholder="' + esc(U.dictNotePh) + '" maxlength="300"><input type="text" id="d-ipa" ' + INP + ' placeholder="Транскрипція, напр. /ˈwɔːtə/" maxlength="100"></div>' +
+      '<input type="text" id="d-ex" lang="' + PG.L.htmlLang + '" ' + INP + ' placeholder="' + esc(U.dictExPh) + '" maxlength="500" style="margin-top:8px"></details>' +
+      '<div class="row" style="margin-top:10px"><button class="btn primary" id="d-add-btn">Додати</button>' + (look ? '<button class="btn" id="d-look" title="Знайти транскрипцію й запис носія у словниковій базі">🔎 Транскрипція</button>' : '') + '<span id="d-look-res" class="small muted"></span></div>' +
+      (look && PG.S.settings.autoIpa ? '<p class="small muted" style="margin:6px 0 0">Транскрипція й записи носіїв шукаються автоматично після додавання (' + esc(PG.L.dict.lookupNote || '') + '). Вимкнути — в ⚙️ «Налаштування».</p>' : '') + '</div>' +
+      '<div class="card"><div class="row"><input type="text" id="d-q" placeholder="Пошук ' + esc(ins()) + ' чи українською…" style="flex:1;min-width:180px"><select id="d-sort" style="width:auto">' +
+      [['new', 'Нові спершу'], ['az', 'А–Я'], ['due', 'За повторенням']].map((x) => '<option value="' + x[0] + '"' + (PG.S.ui.dictSort === x[0] ? ' selected' : '') + '>' + x[1] + '</option>').join('') + '</select></div><div id="d-list"></div></div>';
+    if (!n) $('#d-more').open = false;
+    drawList();
+    bindAdd();
+    $$('[data-acc]').forEach((b) => b.onclick = () => {
+      PG.setVariant(b.dataset.acc);
+      PG.toast('Тепер: ' + PG.variantInfo(PG.variant()).name + ' ' + N_nom() + ' ' + tag(PG.variant()));
+      renderDict();
+      PG.TTS.say(PG.variantInfo(PG.variant()).sample);
+    });
+    const fill = $('#d-fill');
+    if (fill) fill.onclick = async () => {
+      if (fill.dataset.busy) { fill.dataset.stop = '1'; return; }
+      fill.dataset.busy = '1';
+      const r = await D.enrichAll((i, n, found) => { fill.textContent = '🔎 ' + i + ' / ' + n + ' (знайдено ' + found + ') · стоп'; }, () => !!fill.dataset.stop || !document.body.contains(fill));
+      if (!document.body.contains(fill)) return;
+      PG.toast(r.offline ? 'Словниковий сервіс не відповідає (немає інтернету?)' : 'Знайдено транскрипцію для ' + r.found + ' з ' + r.total + ' слів', 4000);
+      renderDict();
+    };
+    $('#d-sort').onchange = (e) => { PG.S.ui.dictSort = e.target.value; PG.save(); drawList(); };
+    $('#d-q').oninput = filter;
+    $('#d-list').addEventListener('click', onListClick);
+  }
+  const N_nom = () => PG.L.names.nom;
+  function plural(n, one, few, many) {
+    const m10 = n % 10, m100 = n % 100;
+    return m10 === 1 && m100 !== 11 ? one : m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14) ? few : many;
+  }
+  function drawList() {
+    const el = $('#d-list');
+    if (!el) return;
+    el.innerHTML = PG.S.dict.length ? order().map((i) => rowHtml(PG.S.dict[i], i)).join('')
+      : '<p class="muted">Словник порожній. Додайте перше слово вгорі або <a href="#/dict/io">імпортуйте список</a> з файлу, таблиці чи тексту.</p>';
+    filter();
+  }
+  function filter() {
+    const inp = $('#d-q');
+    const v = inp ? PG.fold(inp.value.trim()) : '';
+    $$('#d-list .dict-row').forEach((r) => { r.style.display = !v || r.dataset.text.includes(v) ? '' : 'none'; });
+  }
+  function bindAdd() {
+    const en = $('#d-en'), uk = $('#d-uk'), res = $('#d-look-res');
+    let lastInp = en;
+    [en, $('#d-ex')].forEach((i) => i.addEventListener('focus', () => { lastInp = i; }));
+    const kb = PG.letterKeyboard(() => lastInp);
+    if (kb) $('#d-kb').appendChild(kb);
+    $('#d-en-say').onclick = () => { if (en.value.trim()) PG.TTS.say(PG.sayText(en.value)); else en.focus(); };
+    const look = $('#d-look');
+    if (look) look.onclick = async () => {
+      const w = en.value.trim();
+      if (!w) { PG.toast('Спершу введіть слово'); en.focus(); return; }
+      res.textContent = 'Шукаю…';
+      const r = await D.lookup(w);
+      if (r === undefined) { res.textContent = 'Сервіс не відповів (немає інтернету?)'; return; }
+      if (!r || (!r.ipa && !r.au)) { res.textContent = 'У словниковій базі цього слова немає — звучатиме синтезований голос.'; return; }
+      if (r.ipa) { $('#d-ipa').value = r.ipa; $('#d-more').open = true; }
+      res.innerHTML = (r.ipa ? esc(r.ipa) + ' · ' : '') + (r.au ? 'є запис носія: ' + Object.keys(r.au).map((k) => '<button class="btn small" data-native="' + esc(k) + '">🎙️ ' + esc(k.toUpperCase()) + '</button>').join(' ') : 'запису носія немає');
+      $$('[data-native]', res).forEach((b) => b.onclick = () => PG.TTS.playUrl(r.au[b.dataset.native]));
+    };
+    const add = () => {
+      const fields = { word: en.value, uk: uk.value, note: $('#d-note').value, ex: $('#d-ex').value, ipa: $('#d-ipa').value };
+      if (!fields.word.trim() || !fields.uk.trim()) { PG.toast('Заповніть слово і переклад'); (fields.word.trim() ? uk : en).focus(); return; }
+      const r = D.add(fields);
+      if (!r.ok) {
+        if (r.reason === 'dup') { PG.toast('«' + r.word.word + '» уже є у словнику: ' + r.word.uk, 3500); highlight(r.word.word); }
+        else if (r.reason === 'full') PG.toast('У словнику вже ' + D.MAX_WORDS + ' слів — більше не вміщується');
+        return;
+      }
+      ['#d-en', '#d-uk', '#d-note', '#d-ex', '#d-ipa'].forEach((s) => { $(s).value = ''; });
+      res.textContent = '';
+      PG.toast('Додано: ' + r.word.word + ' ✓');
+      drawList();
+      highlight(r.word.word);
+      if (!PG.touch()) en.focus();
+      if (D.canLookup() && PG.S.settings.autoIpa && !r.word.ipa) D.enrich(r.word.word).then((x) => { if (x && (x.ipa || x.au) && $('#d-list')) drawList(); });
+    };
+    $('#d-add-btn').onclick = add;
+    [en, uk, $('#d-note'), $('#d-ex'), $('#d-ipa')].forEach((i) => i.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); add(); } }));
+  }
+  function highlight(word) {
+    const i = D.index(word);
+    const row = $('#d-list .dict-row[data-i="' + i + '"]');
+    if (!row) return;
+    row.classList.add('flash-row');
+    row.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    setTimeout(() => row.classList.remove('flash-row'), 1600);
+  }
+  function onListClick(e) {
+    const b = e.target.closest('[data-act]');
+    if (!b) return;
+    const row = b.closest('.dict-row'), w = PG.S.dict[+row.dataset.i];
+    if (!w) return;
+    const v = PG.variant(), act = b.dataset.act;
+    if (act === 'say') PG.TTS.say(PG.sayText(w.word));
+    else if (act === 'slow') PG.TTS.say(PG.sayText(w.word), 0.6);
+    else if (act === 'alt') PG.TTS.say(PG.sayText(w.word), null, PG.otherVariant(v));
+    else if (act === 'native') PG.TTS.playUrl(D.nativeUrl(w, v));
+    else if (act === 'edit') {
+      row.innerHTML = editHtml(w);
+      row.classList.add('editing');
+      const del = $('[data-act="del"]', row);
+      PG.confirmClick(del, '✕ Точно видалити?', () => { D.remove(w.word); PG.toast('Видалено: ' + w.word); drawList(); });
+      if (!PG.touch()) $('.e-uk', row).focus();
+    } else if (act === 'cancel') drawList();
+    else if (act === 'save') {
+      const r = D.update(w.word, { word: $('.e-en', row).value, uk: $('.e-uk', row).value, note: $('.e-note', row).value, ex: $('.e-ex', row).value, ipa: $('.e-ipa', row).value });
+      if (!r.ok) { PG.toast(r.reason === 'dup' ? 'Таке слово вже є: ' + r.word.word : 'Заповніть слово і переклад'); return; }
+      PG.toast('Збережено ✓');
+      drawList(); highlight(r.word.word);
+    } else if (act === 'lookup') {
+      b.textContent = '🔎 Шукаю…';
+      D.lookup($('.e-en', row).value || w.word).then((r) => {
+        b.textContent = '🔎 Транскрипція';
+        if (r === undefined) { PG.toast('Сервіс не відповів (немає інтернету?)'); return; }
+        if (!r || (!r.ipa && !r.au)) { PG.toast('У словниковій базі цього слова немає'); return; }
+        if (r.ipa) $('.e-ipa', row).value = r.ipa;
+        // Запис носія зберігаємо одразу, а транскрипцію учень бачить у полі й може виправити перед «Зберегти»
+        if (r.au) D.update(w.word, { au: r.au });
+        PG.toast(r.au ? 'Знайдено транскрипцію і запис носія 🎙️' : 'Знайдено транскрипцію');
+      });
+    }
+  }
+
+  function renderIO() {
+    const n = PG.S.dict.length, share = D.canShareFiles();
+    view().innerHTML = '<div class="card"><div class="row small muted"><a href="#/dict">← Мій словник</a></div><h1>⇅ Імпорт та експорт словника</h1>' +
+      '<p class="small muted">Словник (' + esc(N_nom()) + ') живе в браузері на цьому пристрої. Щоб перенести його на телефон чи інший браузер — експортуйте файл тут і імпортуйте його там. Прогрес уроків не переноситься, лише словник.</p></div>' +
+      '<div class="card"><h2>⬇️ Експорт</h2><p>У словнику <b>' + n + '</b> ' + plural(n, 'слово', 'слова', 'слів') + '.</p>' +
+      '<label class="row small"><input type="checkbox" id="x-prog" checked> Разом із прогресом повторення (коли яке слово повторювати)</label>' +
+      '<div class="row" style="margin-top:8px"><button class="btn primary" id="x-json"' + (n ? '' : ' disabled') + '>⬇️ Файл словника (.json)</button>' +
+      (share ? '<button class="btn" id="x-share"' + (n ? '' : ' disabled') + '>📤 Поділитися файлом</button>' : '') +
+      '<button class="btn" id="x-csv"' + (n ? '' : ' disabled') + '>⬇️ Таблиця (.csv)</button><button class="btn" id="x-tsv"' + (n ? '' : ' disabled') + '>📋 Копіювати як таблицю</button></div>' +
+      '<ul class="small muted"><li><b>.json</b> — повна копія (з транскрипцією, записами носіїв і прогресом). Для перенесення на інший пристрій і резервної копії.</li>' +
+      '<li><b>.csv</b> — для Excel, Google Таблиць, Anki, Quizlet. <b>📋 Копіювати як таблицю</b> — вставте в Google Таблиці чи Excel (Ctrl+V), колонки розкладуться самі.</li>' +
+      '<li>Перенести на телефон: «Поділитися» → надішліть файл собі в Telegram чи пошту → на телефоні збережіть його → тут «📂 Вибрати файл».</li></ul></div>' +
+      '<div class="card"><h2>⬆️ Імпорт</h2><p class="small muted">Файл словника (.json), таблиця (.csv, .tsv) або текст (.txt). Перед імпортом ви побачите, що саме додасться.</p>' +
+      '<div class="row"><label class="btn primary file-btn">📂 Вибрати файл<input type="file" id="i-file" accept=".json,.csv,.tsv,.txt,application/json,text/csv,text/plain,text/tab-separated-values" hidden></label></div>' +
+      '<p class="small" style="margin:12px 0 4px">…або вставте список, по слову на рядок:</p>' +
+      '<textarea id="i-text" rows="6" lang="' + PG.L.htmlLang + '" ' + INP + ' placeholder="' + esc(PG.L.ui.dictImportPh) + '"></textarea>' +
+      '<div class="row" style="margin-top:8px"><button class="btn" id="i-parse">Розібрати текст</button></div><div id="i-preview"></div></div>' +
+      '<div class="card"><h3>🗑️ Очистити словник</h3><p class="small muted">Видаляє всі слова словника цієї мови і їхній прогрес повторення на цьому пристрої. Спершу збережіть файл словника. Уроки, налаштування й словники інших мов не зачіпаються.</p>' +
+      '<button class="btn danger" id="i-clear"' + (n ? '' : ' disabled') + '>Очистити словник</button></div>';
+    const prog = () => $('#x-prog').checked;
+    $('#x-json').onclick = () => { D.download(D.fileName('json'), D.toJson(prog()), 'application/json'); PG.toast('Файл збережено в «Завантаження»'); };
+    if (share) $('#x-share').onclick = () => D.share(D.fileName('json'), D.toJson(prog()), 'application/json').catch((e) => { if (e && e.name !== 'AbortError') PG.toast('Не вдалося поділитися: ' + (e.name || e)); });
+    // BOM потрібен Excel, інакше він відкриє UTF-8 як кракозябри
+    $('#x-csv').onclick = () => { D.download(D.fileName('csv'), '﻿' + D.toCsv(), 'text/csv;charset=utf-8'); PG.toast('Таблицю збережено в «Завантаження»'); };
+    $('#x-tsv').onclick = async () => { PG.toast(await D.copy(D.toTsv()) ? 'Скопійовано — вставте в таблицю (Ctrl+V)' : 'Не вдалося скопіювати'); };
+    $('#i-file').onchange = (e) => {
+      const f = e.target.files[0];
+      if (!f) return;
+      if (f.size > 10 * 1024 * 1024) { PG.toast('Файл завеликий (понад 10 МБ)'); return; }
+      const rd = new FileReader();
+      rd.onload = () => preview(D.parse(rd.result, f.name), f.name);
+      rd.onerror = () => PG.toast('Не вдалося прочитати файл');
+      rd.readAsText(f, 'utf-8');
+      e.target.value = '';
+    };
+    $('#i-parse').onclick = () => {
+      const t = $('#i-text').value;
+      if (!t.trim()) { PG.toast('Вставте текст у поле'); return; }
+      preview(D.parse(t), '');
+    };
+    PG.confirmClick($('#i-clear'), 'Точно видалити всі ' + n + ' ' + plural(n, 'слово', 'слова', 'слів') + '?', () => { D.clear(); PG.toast('Словник очищено'); renderIO(); });
+    if (lastImport && lastImport.lang === PG.code) showUndo();
+  }
+  const KIND = { json: 'файл словника', csv: 'таблиця CSV', tsv: 'таблиця', text: 'текст', empty: 'порожньо' };
+  function preview(parsed, source) {
+    const p = D.plan(parsed), el = $('#i-preview');
+    const total = p.fresh.length + p.same.length + p.conflict.length;
+    if (!total) {
+      el.innerHTML = '<div class="note">Не знайдено жодного слова з перекладом' + (p.bad.length ? ': ' + p.bad.length + ' ' + plural(p.bad.length, 'рядок', 'рядки', 'рядків') + ' не розпізнано. Приклад: <code>' + esc(p.bad[0].text) + '</code>' : '') +
+        '. Кожен рядок має містити слово і переклад через «—», «-», «;», «=» чи табуляцію.</div>';
+      return;
+    }
+    // Файл словника іншої мови не забороняємо (учень міг вести змішаний список), але попереджаємо
+    const other = p.lang && p.lang !== PG.code ? PG.langInfo(p.lang) : null;
+    const row = (r, st, cls) => '<tr><td>' + esc(r.word) + '</td><td>' + esc(r.uk) + '</td><td><span class="pill ' + cls + '">' + st + '</span></td></tr>';
+    const sample = [].concat(p.conflict.map((x) => row(x.row, 'інший переклад: ' + esc(x.cur.uk), 'amber')), p.fresh.map((r) => row(r, 'нове', 'green')), p.same.map((x) => row(x.row, 'вже є', 'gray'))).slice(0, 40);
+    el.innerHTML = '<div class="card inner"><h3>Перегляд: ' + (source ? esc(source) + ' (' + KIND[p.kind] + ')' : 'вставлений ' + KIND[p.kind]) + '</h3>' +
+      (other ? '<p class="note small">⚠️ Це словник іншої мови: ' + esc(other.name.toLowerCase()) + '. Ви зараз вчите ' + esc(PG.L.names.acc) + ' — слова потраплять у словник саме цієї мови.</p>' : '') +
+      '<div class="row small"><span class="pill green">нових: ' + p.fresh.length + '</span><span class="pill gray">вже є: ' + p.same.length + '</span><span class="pill amber">з іншим перекладом: ' + p.conflict.length + '</span>' +
+      (p.dup ? '<span class="pill gray">повторів у файлі: ' + p.dup + '</span>' : '') + (p.bad.length ? '<span class="pill red">не розпізнано: ' + p.bad.length + '</span>' : '') + '</div>' +
+      (p.conflict.length ? '<p class="small" style="margin-bottom:4px"><b>Слова з іншим перекладом:</b></p><div class="row small">' +
+        [['keep', 'залишити мій переклад'], ['replace', 'замінити перекладом з файлу'], ['merge', 'об\'єднати переклади']].map((o, k) => '<label><input type="radio" name="i-conf" value="' + o[0] + '"' + (k ? '' : ' checked') + '> ' + o[1] + '</label>').join('') + '</div>' : '') +
+      (p.withCards ? '<label class="row small" style="margin-top:6px"><input type="checkbox" id="i-prog" checked> Узяти прогрес повторення з файлу (для слів, яких ви ще не повторювали)</label>' : '') +
+      '<div class="tblwrap" style="max-height:320px;overflow:auto;margin-top:8px"><table><tr><th>' + esc(PG.cap(ins())) + '</th><th>Переклад</th><th>Стан</th></tr>' + sample.join('') + '</table></div>' +
+      (total > 40 ? '<p class="small muted">Показано 40 з ' + total + '.</p>' : '') +
+      (p.bad.length ? '<details class="small"><summary>Нерозпізнані рядки (' + p.bad.length + ')</summary><ul>' + p.bad.slice(0, 20).map((b) => '<li>рядок ' + b.line + ': <code>' + esc(b.text) + '</code></li>').join('') + '</ul></details>' : '') +
+      '<div class="row" style="margin-top:10px"><button class="btn primary" id="i-go"' + (p.fresh.length || p.conflict.length || p.same.length ? '' : ' disabled') + '>Імпортувати</button><button class="btn" id="i-cancel">Скасувати</button></div></div>';
+    $('#i-cancel').onclick = () => { el.innerHTML = ''; };
+    $('#i-go').onclick = () => {
+      const conf = $('input[name="i-conf"]:checked'), progEl = $('#i-prog');
+      const r = D.apply(p, { conflict: conf ? conf.value : 'keep', progress: progEl ? progEl.checked : true });
+      lastImport = Object.assign(r, { lang: PG.code });
+      el.innerHTML = '';
+      $('#i-text').value = '';
+      renderIO();
+      PG.toast('Імпортовано ✓');
+    };
+  }
+  function showUndo() {
+    const r = lastImport;
+    $('#i-preview').innerHTML = '<div class="good"><b>Імпорт завершено.</b> Додано слів: ' + r.added + ', оновлено перекладів: ' + r.updated + ', доповнено полів: ' + r.filled +
+      (r.skipped ? ', не вмістилося: ' + r.skipped : '') + '.<div class="row" style="margin-top:8px"><a class="btn primary small" href="#/dict">📒 До словника</a><button class="btn small" id="i-undo">↩ Скасувати імпорт</button></div></div>';
+    $('#i-undo').onclick = () => { D.undo(r.snapshot); lastImport = null; PG.toast('Імпорт скасовано'); renderIO(); };
+  }
+
+  function renderPractice() {
+    const n = PG.S.dict.length;
+    view().innerHTML = PG.views.voiceBanner() + '<div class="card"><div class="row small muted"><a href="#/dict">← Мій словник</a></div><h1>🎯 Тренування словника</h1>' +
+      '<p class="muted">10 завдань зі слів словника: диктант (почути й написати), переклад українською → ' + esc(ins()) + ', вибір перекладу. Спершу — слова, які пора повторити, і нові.</p></div><div id="dp-body"></div>';
+    if (!n) { $('#dp-body').innerHTML = '<div class="card center"><p>Словник порожній.</p><a class="btn primary" href="#/dict">＋ Додати слова</a></div>'; return; }
+    PG.runExercises($('#dp-body'), D.practiceSpecs(10), { drill: true });
+  }
+
+  PG.renderDict = renderDict;
+})(window.PG);

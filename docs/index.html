@@ -1,0 +1,2548 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Polyglot — мови з нуля до B2 для україномовних</title>
+<meta name="description" content="Тренажер мов для україномовних: англійська, болгарська, німецька й словацька з нуля — уроки, вправи, слова, озвучення, мій словник. Прогрес кожної мови зберігається окремо.">
+<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#181e29" media="(prefers-color-scheme: dark)">
+<!-- manifest, іконки, sw.js і пакети langs/*.js у зібраному вигляді створює build.mjs у docs/; у src/ (розробка) перших трьох немає, і це нормально -->
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-title" content="Polyglot">
+<!-- Онлайн-голос (core.js → PG.TTS) і словниковий сервіс (пакет en) не мають отримувати адресу сторінки -->
+<meta name="referrer" content="no-referrer">
+<!-- Іконку вкладки views2.js → applyFlag малює з прапора мови навчання (або з логотипа, поки мову не вибрано) -->
+<link rel="icon" href="data:,">
+<style>
+:root{
+  --bg:#f6f7fb; --card:#fff; --text:#1d2433; --muted:#667085; --line:#e4e7ee;
+  --blue:#1d4ed8; --blue-soft:#e8effd; --red:#dc2626; --red-soft:#fdecec;
+  --green:#12805c; --green-soft:#e6f6ef; --amber:#b25e09; --amber-soft:#fff4e5;
+  --radius:14px; --shadow:0 1px 3px rgba(16,24,40,.08),0 1px 2px rgba(16,24,40,.04);
+}
+@media (prefers-color-scheme:dark){
+  :root{--bg:#10141c; --card:#181e29; --text:#e7eaf0; --muted:#98a2b3; --line:#2a3242;
+    --blue:#8ab4f8; --blue-soft:#1b2a42; --red:#ff6b6b; --red-soft:#3a1d22;
+    --green:#4cc38a; --green-soft:#16302a; --amber:#f0a44b; --amber-soft:#35281a;}
+  /* У темній темі синій світлий, і білий текст на ньому майже не читається */
+  .btn.primary,.subtabs button.active,.seg button.active{color:#0b1220}
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{font:16px/1.55 "Segoe UI",system-ui,-apple-system,Roboto,Arial,sans-serif;background:var(--bg);color:var(--text)}
+a{color:var(--blue)}
+h1,h2,h3,h4{line-height:1.25;margin:.2em 0 .5em}
+h1{font-size:1.55rem} h2{font-size:1.3rem} h3{font-size:1.1rem} h4{font-size:1rem}
+header.top{position:sticky;top:0;z-index:20;background:var(--card);border-bottom:1px solid var(--line)}
+.top-inner{max-width:1180px;margin:0 auto;display:flex;align-items:center;gap:14px;padding:8px 16px}
+.brand{font-weight:700;white-space:nowrap;display:flex;align-items:center;gap:8px}
+/* Прапори різних пропорцій (США 19:10, Словаччина 3:2) — висота спільна, ширина з пропорцій малюнка */
+.logo{display:inline-flex;flex:none;height:18px;border-radius:3px;overflow:hidden;box-shadow:0 0 0 1px var(--line)}
+.logo svg{display:block;height:100%;width:auto}
+.logo.square{height:28px;border-radius:7px;box-shadow:none}
+.lang-name{font-weight:500;font-size:.85rem;color:var(--muted)}
+body.no-lang nav.tabs{display:none}
+.vv{font-size:.8em;font-weight:400;color:var(--muted);white-space:nowrap}
+.vv .say{color:var(--muted);font-weight:500}
+.flag-ic{display:inline-flex;height:13px;vertical-align:-2px;border-radius:2px;overflow:hidden;box-shadow:0 0 0 1px var(--line)}
+.flag-ic svg{display:block;height:100%;width:auto}
+.variant-pick .btn.big{font-size:1.05rem;padding:12px 18px}
+.variant-pick .btn.big .flag-ic{height:19px}
+.variant-card{border:2px solid var(--blue)}
+nav.tabs{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none}
+nav.tabs a{padding:8px 10px;border-radius:10px;text-decoration:none;color:var(--muted);white-space:nowrap;font-weight:500}
+nav.tabs a.active{background:var(--blue-soft);color:var(--blue)}
+nav.tabs a .lbl-s{display:none}
+main{max-width:1180px;margin:0 auto;padding:18px 16px 90px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px 18px;margin:0 0 14px}
+.grid{display:grid;gap:14px}
+.g2{grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}
+.g3{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+.muted{color:var(--muted)} .small{font-size:.88rem} .center{text-align:center}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.spacer{flex:1}
+.btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--card);color:var(--text);padding:8px 14px;border-radius:10px;font:inherit;font-weight:500;cursor:pointer;text-decoration:none}
+.btn.primary{background:var(--blue);border-color:var(--blue);color:#fff}
+.btn.danger{color:var(--red);border-color:var(--red)}
+.btn.small{padding:4px 10px;font-size:.9rem}
+.btn:disabled{opacity:.5;cursor:default}
+.pill{display:inline-block;padding:2px 9px;border-radius:999px;font-size:.8rem;font-weight:600;background:var(--blue-soft);color:var(--blue)}
+.pill.green{background:var(--green-soft);color:var(--green)}
+.pill.amber{background:var(--amber-soft);color:var(--amber)}
+.pill.red{background:var(--red-soft);color:var(--red)}
+.pill.gray{background:var(--line);color:var(--muted)}
+.bar{height:10px;background:var(--line);border-radius:99px;overflow:hidden}
+.bar>i{display:block;height:100%;background:linear-gradient(90deg,var(--blue),#3b82f6);border-radius:99px}
+.stat{font-size:1.6rem;font-weight:700}
+.say{color:var(--blue);font-weight:600;cursor:pointer;border-bottom:1px dashed transparent}
+.say::after{content:" 🔊";font-size:.75em;opacity:.55}
+.nosay .say::after,.dict-en .say::after,.dict-ex .say::after{content:""}
+table{border-collapse:collapse;width:100%;margin:8px 0 12px;font-size:.95rem}
+th,td{border:1px solid var(--line);padding:6px 9px;text-align:left;vertical-align:top}
+th{background:var(--blue-soft);font-weight:600}
+.tblwrap{overflow-x:auto}
+.note{background:var(--amber-soft);border-left:4px solid var(--amber);padding:10px 14px;border-radius:8px;margin:10px 0}
+.tip{background:var(--blue-soft);border-left:4px solid var(--blue);padding:10px 14px;border-radius:8px;margin:10px 0}
+.good{background:var(--green-soft);border-left:4px solid var(--green);padding:10px 14px;border-radius:8px;margin:10px 0}
+.subtabs{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0 14px}
+.subtabs button{border:1px solid var(--line);background:var(--card);color:var(--muted);padding:6px 12px;border-radius:99px;font:inherit;cursor:pointer}
+.subtabs button.active{background:var(--blue);border-color:var(--blue);color:#fff}
+ul.check{list-style:none;padding-left:0} ul.check li{padding:3px 0 3px 26px;position:relative}
+ul.check li::before{content:"✓";position:absolute;left:4px;color:var(--green);font-weight:700}
+.lesson-item{display:flex;align-items:center;gap:12px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;margin:6px 0;background:var(--card);text-decoration:none;color:var(--text)}
+.lesson-item .num{font-weight:700;color:var(--blue);min-width:40px}
+.ex-box{max-width:640px;margin:0 auto}
+.ex-q{font-size:1.15rem;margin:6px 0 14px}
+.opts{display:grid;gap:8px}
+.opt{text-align:left;border:1.5px solid var(--line);background:var(--card);color:var(--text);padding:11px 14px;border-radius:12px;font:inherit;cursor:pointer}
+.opt.ok{border-color:var(--green);background:var(--green-soft)}
+.opt.bad{border-color:var(--red);background:var(--red-soft)}
+input[type=text],input[type=number],input[type=search],select,textarea{font:inherit;font-size:16px;padding:10px 12px;border:1.5px solid var(--line);border-radius:10px;background:var(--card);color:var(--text);width:100%}
+input[type=text]:focus,textarea:focus{outline:none;border-color:var(--blue)}
+input.ok{border-color:var(--green);background:var(--green-soft)} input.bad{border-color:var(--red);background:var(--red-soft)}
+.dia{display:flex;flex-wrap:wrap;gap:4px;margin:8px 0}
+.dia button{min-width:34px;padding:5px 6px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--text);font:inherit;cursor:pointer}
+.tokens{display:flex;flex-wrap:wrap;gap:6px;min-height:46px;padding:8px;border:1.5px dashed var(--line);border-radius:12px;margin:6px 0}
+.tok{padding:6px 11px;border-radius:9px;border:1px solid var(--line);background:var(--blue-soft);color:var(--text);cursor:pointer;font:inherit}
+.feedback{margin-top:12px;padding:10px 14px;border-radius:10px}
+.feedback.ok{background:var(--green-soft)} .feedback.bad{background:var(--red-soft)} .feedback.near{background:var(--amber-soft)}
+.flash{min-height:180px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:8px}
+.flash .front{font-size:1.7rem;font-weight:700}
+.flash .back{font-size:1.25rem}
+.srs-btns{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px}
+.srs-btns .btn{justify-content:center;flex-direction:column;gap:0}
+.srs-btns small{font-weight:400;color:var(--muted);font-size:.75rem}
+.big-phrase{font-size:1.5rem;font-weight:700;color:var(--blue);margin:6px 0}
+.timer{font-variant-numeric:tabular-nums;font-size:1.4rem;font-weight:700}
+details.stage{margin:0 0 12px}
+details.stage>summary{cursor:pointer;list-style:none}
+details.stage>summary::-webkit-details-marker{display:none}
+details.mod{border:1px solid var(--line);border-radius:12px;padding:8px 12px;margin:8px 0;background:var(--card)}
+details.mod>summary{cursor:pointer;font-weight:600}
+.kv{display:grid;grid-template-columns:150px 1fr;gap:4px 12px;margin-top:8px}
+.kv b{color:var(--muted);font-weight:600}
+.done-mark{color:var(--green);font-weight:700}
+.week-plan td:first-child{white-space:nowrap;font-weight:600}
+.today-row{background:var(--blue-soft)}
+.toast{position:fixed;left:50%;bottom:84px;transform:translateX(-50%);background:var(--text);color:var(--bg);padding:9px 16px;border-radius:10px;z-index:50;opacity:0;transition:opacity .2s;pointer-events:none}
+.toast.show{opacity:.95}
+/* Підсвітка при наведенні лише там, де є миша: на сенсорному екрані вона «залипає» після дотику */
+@media (hover:hover){
+  .btn:hover,.lesson-item:hover,.opt:hover:not(:disabled),.ic:hover,.dia button:hover{border-color:var(--blue)}
+  .btn.primary:hover{filter:brightness(1.08)}
+  .say:hover{border-bottom-color:var(--blue)}
+}
+@media (pointer:coarse){.kbd{display:none}}
+.lc-more{margin-top:8px}
+.lc-more>summary{cursor:pointer;padding:4px 0}
+.lc-more>.row{margin-top:4px!important}
+.update-bar{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);z-index:60;display:flex;align-items:center;gap:10px;background:var(--card);color:var(--text);border:1px solid var(--blue);border-radius:12px;padding:8px 10px 8px 14px;box-shadow:0 4px 16px rgba(16,24,40,.18);max-width:calc(100% - 24px)}
+.warn-banner{background:var(--amber-soft);border:1px solid var(--amber);color:var(--text);padding:8px 12px;border-radius:10px;margin-bottom:12px;font-size:.92rem}
+/* Вісім вкладок із повними підписами вміщаються не на кожному екрані, а ширина залежить від шрифту й емодзі системи.
+   Тому views2.js → fitNav вимірює навігацію: тісно — компактні вкладки (як на телефоні), все одно тісно — без назви біля логотипа */
+@media (min-width:701px){
+  header.nav-compact nav.tabs a{display:flex;flex-direction:column;align-items:center;padding:4px 8px;font-size:.85rem;line-height:1.25}
+  header.nav-compact nav.tabs a .lbl{display:none}
+  header.nav-compact nav.tabs a .lbl-s{display:block;font-size:.72rem}
+  header.nav-compact .lang-name,header.nav-tight .brand-name{display:none}
+}
+@media (max-width:700px){
+  body{font-size:15.5px}
+  .top-inner{padding:8px 12px}
+  nav.tabs{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px solid var(--line);padding:6px 6px calc(6px + env(safe-area-inset-bottom));justify-content:space-around;z-index:30}
+  nav.tabs a{flex:1;min-width:0;padding:6px 2px;font-size:.78rem;display:flex;flex-direction:column;align-items:center}
+  nav.tabs a .lbl{display:none}
+  nav.tabs a .lbl-s{display:block;font-size:.68rem}
+  .kv{grid-template-columns:1fr}
+  .srs-btns{grid-template-columns:repeat(2,1fr)}
+  .card{padding:14px}
+  h1{font-size:1.3rem}
+  main{padding-bottom:calc(90px + env(safe-area-inset-bottom))}
+  .toast{bottom:calc(84px + env(safe-area-inset-bottom))}
+  .update-bar{bottom:calc(76px + env(safe-area-inset-bottom))}
+  /* Шапка уроку: мета видна лише на теорії, вкладки — одним рядком із прокруткою, щоб вправа була на першому екрані */
+  .lesson-head:not(.tab-theory) .lesson-goals{display:none}
+  .subtabs{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin-bottom:4px}
+  .subtabs button{flex:none}
+  /* «Програма» на телефоні відкривається з «Уроків»: восьма вкладка в нижній навігації не вміщується */
+  nav.tabs a.wide-only{display:none}
+  .dict-row{flex-wrap:wrap}
+  .dict-actions{width:100%;justify-content:flex-start}
+  .ic{min-width:44px;height:40px}
+  /* Два ряди по 9 клавіш на всю ширину: вищі кнопки легше влучити пальцем, а займають менше місця, ніж три ряди */
+  .dia{display:grid;grid-template-columns:repeat(9,1fr);gap:4px}
+  .dia button{min-width:0;height:42px;padding:0}
+}
+.ipa{font-family:"Segoe UI","Lucida Sans Unicode","Arial Unicode MS",system-ui,sans-serif;color:var(--muted);font-size:.92em}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.seg button{border:0;background:var(--card);color:var(--muted);padding:6px 10px;font:inherit;font-size:.9rem;cursor:pointer}
+.seg button+button{border-left:1px solid var(--line)}
+.seg button.active{background:var(--blue);color:#fff}
+.row.nowrap{flex-wrap:nowrap}
+label.small.muted>input,label.small.muted>.row{margin-top:3px}
+label.small.muted{display:block}
+.dict-row{display:flex;align-items:flex-start;gap:10px;padding:10px 4px;border-bottom:1px solid var(--line)}
+.dict-row:last-child{border-bottom:0}
+.dict-row.flash-row{background:var(--blue-soft);border-radius:10px;transition:background .3s}
+.dict-row.editing{display:block}
+.dict-main{flex:1;min-width:0}
+.dict-en{font-size:1.08rem}
+.dict-en .pill{font-size:.72rem;vertical-align:middle}
+.dict-uk{margin-top:2px}
+.dict-ex{margin-top:3px;font-style:italic}
+.dict-actions{display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end}
+.dict-edit input{margin-top:3px}
+.ic{min-width:38px;height:36px;border:1px solid var(--line);border-radius:9px;background:var(--card);color:var(--text);font:inherit;cursor:pointer;padding:0 6px}
+.card.inner{box-shadow:none;margin-top:12px;background:var(--bg)}
+.file-btn{position:relative}
+code{background:var(--blue-soft);padding:1px 5px;border-radius:5px;font-size:.88em}
+.flash .ipa{font-size:1rem}
+.theory h3{margin-top:1.1em}
+.app-logo{display:inline-flex;flex:none;width:56px;height:56px;margin-right:6px}
+.app-logo svg{width:100%;height:100%;border-radius:14px}
+.lang-card.current{border:2px solid var(--blue)}
+.flag-big{display:inline-flex;flex:none;height:34px;border-radius:5px;overflow:hidden;box-shadow:0 0 0 1px var(--line);margin-right:4px}
+.flag-big svg{display:block;height:100%;width:auto}
+@media print{
+  header.top,nav.tabs,.btn,.subtabs,.no-print{display:none!important}
+  body{background:#fff;color:#000} .card{box-shadow:none;border-color:#ccc}
+  details{display:block} details>*{display:block}
+  main{padding:0}
+}
+
+</style>
+<script>window.PG = window.PG || {}; PG.BUILD = "f63a5e6475"; PG.BUNDLES = {"en":"langs/en.c0a728ed78.js","bg":"langs/bg.b8059c3323.js","de":"langs/de.dd95f0855d.js","sk":"langs/sk.a16f0e704d.js"};</script>
+</head>
+<body class="no-lang">
+<!-- Логотип: дві репліки розмови в кольорах прапора України. З нього build.mjs (tools/icons.mjs) малює PNG-іконки додатка,
+     тому лише rect / circle / path із заливкою; він же — на екрані вибору мови й на вкладці, поки мову не вибрано -->
+<span id="app-logo" hidden><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" aria-hidden="true"><rect width="512" height="512" fill="#1d4ed8"/><path d="M196 84H420C443 84 462 103 462 126V258C462 281 443 300 420 300H396V356L338 300H196C173 300 154 281 154 258V126C154 103 173 84 196 84Z" fill="#ffd500"/><path d="M92 196H316C339 196 358 215 358 238V370C358 393 339 412 316 412H176L118 466V412H92C69 412 50 393 50 370V238C50 215 69 196 92 196Z" fill="#ffffff"/><circle cx="134" cy="304" r="24" fill="#1d4ed8"/><circle cx="204" cy="304" r="24" fill="#1d4ed8"/><circle cx="274" cy="304" r="24" fill="#1d4ed8"/></svg></span>
+<header class="top"><div class="top-inner"><a class="brand" href="#/languages" title="Змінити мову" style="text-decoration:none;color:inherit"><span class="logo" id="lang-flag"></span><span class="brand-name">Polyglot</span><span class="lang-name" id="lang-name"></span></a><nav class="tabs" id="nav"></nav></div></header>
+<main id="view"><div class="card">Завантаження…</div></main>
+<!-- Порядок важливий: реєстр мов → рушій → екрани. Мовні пакети вантажить core.js → PG.loadPack, коли мову вибрано -->
+<script>
+/* Реєстр мов. Нова мова = запис тут + папка src/langs/<код>/ (див. ADDING-A-LANGUAGE.md).
+ * Реєстр вбудовано в index.html, тож екран вибору мови показує всі мови, не завантажуючи їхніх пакетів:
+ * назви, прапори, колір і список файлів мають бути тут, а не в pack.js. */
+window.PG = window.PG || {};
+PG.LANGS = [
+  {
+    code: 'en',
+    name: 'Англійська', native: 'English',
+    levels: 'з нуля до B2',
+    about: '55 уроків від звуків до B2, американська чи британська на вибір, мій словник з транскрипцією й записами носіїв, тренажер чисел і spelling.',
+    // Прапор — за варіантом мови, який вибрав учень (settings.variant); перший — за замовчуванням
+    flags: {
+      us: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1235 650" aria-hidden="true"><rect width="1235" height="650" fill="#b22234"/><g fill="#ffffff"><rect y="50" width="1235" height="50"/><rect y="150" width="1235" height="50"/><rect y="250" width="1235" height="50"/><rect y="350" width="1235" height="50"/><rect y="450" width="1235" height="50"/><rect y="550" width="1235" height="50"/></g><rect width="494" height="350" fill="#3c3b6e"/><g fill="#ffffff"><path d="M41 15.1L45.4 28.9L60 28.9L48.2 37.5L52.7 51.3L41 42.7L29.2 51.3L33.7 37.5L21.9 28.9L36.5 28.9Z"/><path d="M122.9 15.1L127.3 28.9L141.9 28.9L130.1 37.5L134.6 51.3L122.9 42.7L111.1 51.3L115.6 37.5L103.8 28.9L118.4 28.9Z"/><path d="M204.8 15.1L209.2 28.9L223.8 28.9L212 37.5L216.5 51.3L204.8 42.7L193 51.3L197.5 37.5L185.7 28.9L200.3 28.9Z"/><path d="M286.7 15.1L291.1 28.9L305.7 28.9L293.9 37.5L298.4 51.3L286.7 42.7L274.9 51.3L279.4 37.5L267.6 28.9L282.2 28.9Z"/><path d="M368.6 15.1L373 28.9L387.6 28.9L375.8 37.5L380.3 51.3L368.6 42.7L356.8 51.3L361.3 37.5L349.5 28.9L364.1 28.9Z"/><path d="M450.5 15.1L454.9 28.9L469.5 28.9L457.7 37.5L462.2 51.3L450.5 42.7L438.7 51.3L443.2 37.5L431.4 28.9L446 28.9Z"/><path d="M81.9 50.2L86.4 64L100.9 64L89.2 72.6L93.7 86.4L81.9 77.8L70.1 86.4L74.6 72.6L62.9 64L77.4 64Z"/><path d="M163.8 50.2L168.3 64L182.8 64L171.1 72.6L175.6 86.4L163.8 77.8L152 86.4L156.5 72.6L144.8 64L159.3 64Z"/><path d="M245.7 50.2L250.2 64L264.7 64L253 72.6L257.5 86.4L245.7 77.8L233.9 86.4L238.4 72.6L226.7 64L241.2 64Z"/><path d="M327.6 50.2L332.1 64L346.6 64L334.9 72.6L339.4 86.4L327.6 77.8L315.8 86.4L320.3 72.6L308.6 64L323.1 64Z"/><path d="M409.5 50.2L414 64L428.5 64L416.8 72.6L421.3 86.4L409.5 77.8L397.7 86.4L402.2 72.6L390.5 64L405 64Z"/><path d="M41 85.3L45.4 99.1L60 99.1L48.2 107.7L52.7 121.5L41 112.9L29.2 121.5L33.7 107.7L21.9 99.1L36.5 99.1Z"/><path d="M122.9 85.3L127.3 99.1L141.9 99.1L130.1 107.7L134.6 121.5L122.9 112.9L111.1 121.5L115.6 107.7L103.8 99.1L118.4 99.1Z"/><path d="M204.8 85.3L209.2 99.1L223.8 99.1L212 107.7L216.5 121.5L204.8 112.9L193 121.5L197.5 107.7L185.7 99.1L200.3 99.1Z"/><path d="M286.7 85.3L291.1 99.1L305.7 99.1L293.9 107.7L298.4 121.5L286.7 112.9L274.9 121.5L279.4 107.7L267.6 99.1L282.2 99.1Z"/><path d="M368.6 85.3L373 99.1L387.6 99.1L375.8 107.7L380.3 121.5L368.6 112.9L356.8 121.5L361.3 107.7L349.5 99.1L364.1 99.1Z"/><path d="M450.5 85.3L454.9 99.1L469.5 99.1L457.7 107.7L462.2 121.5L450.5 112.9L438.7 121.5L443.2 107.7L431.4 99.1L446 99.1Z"/><path d="M81.9 120.4L86.4 134.2L100.9 134.2L89.2 142.8L93.7 156.6L81.9 148L70.1 156.6L74.6 142.8L62.9 134.2L77.4 134.2Z"/><path d="M163.8 120.4L168.3 134.2L182.8 134.2L171.1 142.8L175.6 156.6L163.8 148L152 156.6L156.5 142.8L144.8 134.2L159.3 134.2Z"/><path d="M245.7 120.4L250.2 134.2L264.7 134.2L253 142.8L257.5 156.6L245.7 148L233.9 156.6L238.4 142.8L226.7 134.2L241.2 134.2Z"/><path d="M327.6 120.4L332.1 134.2L346.6 134.2L334.9 142.8L339.4 156.6L327.6 148L315.8 156.6L320.3 142.8L308.6 134.2L323.1 134.2Z"/><path d="M409.5 120.4L414 134.2L428.5 134.2L416.8 142.8L421.3 156.6L409.5 148L397.7 156.6L402.2 142.8L390.5 134.2L405 134.2Z"/><path d="M41 155.5L45.4 169.3L60 169.3L48.2 177.9L52.7 191.7L41 183.1L29.2 191.7L33.7 177.9L21.9 169.3L36.5 169.3Z"/><path d="M122.9 155.5L127.3 169.3L141.9 169.3L130.1 177.9L134.6 191.7L122.9 183.1L111.1 191.7L115.6 177.9L103.8 169.3L118.4 169.3Z"/><path d="M204.8 155.5L209.2 169.3L223.8 169.3L212 177.9L216.5 191.7L204.8 183.1L193 191.7L197.5 177.9L185.7 169.3L200.3 169.3Z"/><path d="M286.7 155.5L291.1 169.3L305.7 169.3L293.9 177.9L298.4 191.7L286.7 183.1L274.9 191.7L279.4 177.9L267.6 169.3L282.2 169.3Z"/><path d="M368.6 155.5L373 169.3L387.6 169.3L375.8 177.9L380.3 191.7L368.6 183.1L356.8 191.7L361.3 177.9L349.5 169.3L364.1 169.3Z"/><path d="M450.5 155.5L454.9 169.3L469.5 169.3L457.7 177.9L462.2 191.7L450.5 183.1L438.7 191.7L443.2 177.9L431.4 169.3L446 169.3Z"/><path d="M81.9 190.6L86.4 204.4L100.9 204.4L89.2 213L93.7 226.8L81.9 218.2L70.1 226.8L74.6 213L62.9 204.4L77.4 204.4Z"/><path d="M163.8 190.6L168.3 204.4L182.8 204.4L171.1 213L175.6 226.8L163.8 218.2L152 226.8L156.5 213L144.8 204.4L159.3 204.4Z"/><path d="M245.7 190.6L250.2 204.4L264.7 204.4L253 213L257.5 226.8L245.7 218.2L233.9 226.8L238.4 213L226.7 204.4L241.2 204.4Z"/><path d="M327.6 190.6L332.1 204.4L346.6 204.4L334.9 213L339.4 226.8L327.6 218.2L315.8 226.8L320.3 213L308.6 204.4L323.1 204.4Z"/><path d="M409.5 190.6L414 204.4L428.5 204.4L416.8 213L421.3 226.8L409.5 218.2L397.7 226.8L402.2 213L390.5 204.4L405 204.4Z"/><path d="M41 225.7L45.4 239.5L60 239.5L48.2 248.1L52.7 261.9L41 253.3L29.2 261.9L33.7 248.1L21.9 239.5L36.5 239.5Z"/><path d="M122.9 225.7L127.3 239.5L141.9 239.5L130.1 248.1L134.6 261.9L122.9 253.3L111.1 261.9L115.6 248.1L103.8 239.5L118.4 239.5Z"/><path d="M204.8 225.7L209.2 239.5L223.8 239.5L212 248.1L216.5 261.9L204.8 253.3L193 261.9L197.5 248.1L185.7 239.5L200.3 239.5Z"/><path d="M286.7 225.7L291.1 239.5L305.7 239.5L293.9 248.1L298.4 261.9L286.7 253.3L274.9 261.9L279.4 248.1L267.6 239.5L282.2 239.5Z"/><path d="M368.6 225.7L373 239.5L387.6 239.5L375.8 248.1L380.3 261.9L368.6 253.3L356.8 261.9L361.3 248.1L349.5 239.5L364.1 239.5Z"/><path d="M450.5 225.7L454.9 239.5L469.5 239.5L457.7 248.1L462.2 261.9L450.5 253.3L438.7 261.9L443.2 248.1L431.4 239.5L446 239.5Z"/><path d="M81.9 260.8L86.4 274.6L100.9 274.6L89.2 283.2L93.7 297L81.9 288.4L70.1 297L74.6 283.2L62.9 274.6L77.4 274.6Z"/><path d="M163.8 260.8L168.3 274.6L182.8 274.6L171.1 283.2L175.6 297L163.8 288.4L152 297L156.5 283.2L144.8 274.6L159.3 274.6Z"/><path d="M245.7 260.8L250.2 274.6L264.7 274.6L253 283.2L257.5 297L245.7 288.4L233.9 297L238.4 283.2L226.7 274.6L241.2 274.6Z"/><path d="M327.6 260.8L332.1 274.6L346.6 274.6L334.9 283.2L339.4 297L327.6 288.4L315.8 297L320.3 283.2L308.6 274.6L323.1 274.6Z"/><path d="M409.5 260.8L414 274.6L428.5 274.6L416.8 283.2L421.3 297L409.5 288.4L397.7 297L402.2 283.2L390.5 274.6L405 274.6Z"/><path d="M41 295.9L45.4 309.7L60 309.7L48.2 318.3L52.7 332.1L41 323.5L29.2 332.1L33.7 318.3L21.9 309.7L36.5 309.7Z"/><path d="M122.9 295.9L127.3 309.7L141.9 309.7L130.1 318.3L134.6 332.1L122.9 323.5L111.1 332.1L115.6 318.3L103.8 309.7L118.4 309.7Z"/><path d="M204.8 295.9L209.2 309.7L223.8 309.7L212 318.3L216.5 332.1L204.8 323.5L193 332.1L197.5 318.3L185.7 309.7L200.3 309.7Z"/><path d="M286.7 295.9L291.1 309.7L305.7 309.7L293.9 318.3L298.4 332.1L286.7 323.5L274.9 332.1L279.4 318.3L267.6 309.7L282.2 309.7Z"/><path d="M368.6 295.9L373 309.7L387.6 309.7L375.8 318.3L380.3 332.1L368.6 323.5L356.8 332.1L361.3 318.3L349.5 309.7L364.1 309.7Z"/><path d="M450.5 295.9L454.9 309.7L469.5 309.7L457.7 318.3L462.2 332.1L450.5 323.5L438.7 332.1L443.2 318.3L431.4 309.7L446 309.7Z"/></g></svg>',
+      gb: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 30" aria-hidden="true"><clipPath id="uk-flag-t"><path d="M30,15h30v15zv15h-30zh-30v-15zv-15h30z"/></clipPath><path d="M0,0v30h60v-30z" fill="#012169"/><path d="M0,0L60,30M60,0L0,30" stroke="#fff" stroke-width="6"/><path d="M0,0L60,30M60,0L0,30" clip-path="url(#uk-flag-t)" stroke="#C8102E" stroke-width="4"/><path d="M30,0v30M0,15h60" stroke="#fff" stroke-width="10"/><path d="M30,0v30M0,15h60" stroke="#C8102E" stroke-width="6"/></svg>'
+    },
+    // Колір кнопок і посилань для мови: світла й темна теми
+    theme: { light: '#1d4ed8', dark: '#8ab4f8' },
+    // Порядок файлів = порядок уроків
+    files: ['pack.js', 'gen.js', 'data/lessons-a0.js', 'data/lessons-a1a.js', 'data/lessons-a1b.js', 'data/lessons-a2a.js', 'data/lessons-a2b.js', 'data/lessons-b1a.js', 'data/lessons-b1b.js', 'data/lessons-b2a.js', 'data/lessons-b2b.js', 'data/reference.js', 'data/program.js', 'data/resources.js']
+  },
+  {
+    code: 'bg',
+    name: 'Болгарська', native: 'Български',
+    levels: 'з нуля до B2',
+    about: 'Етап 0 і A1 (кирилиця, ъ і наголос, артиклі -ът / -та / -то, «ще» і «да» замість інфінітива), план A2–B2, тренажер чисел, цін в євро, часу й дат, довідник і фальшиві друзі.',
+    flags: {
+      bg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 5 3" aria-hidden="true"><rect width="5" height="3" fill="#d62612"/><rect width="5" height="2" fill="#00966e"/><rect width="5" height="1" fill="#fff"/></svg>'
+    },
+    theme: { light: '#0f766e', dark: '#2dd4bf' },
+    files: ['pack.js', 'gen.js', 'data/lessons-a0.js', 'data/lessons-a1a.js', 'data/lessons-a1b.js', 'data/reference.js', 'data/program.js', 'data/resources.js']
+  },
+  {
+    code: 'de',
+    name: 'Німецька', native: 'Deutsch',
+    levels: 'з нуля до B2',
+    about: 'Етап 0 і A1 (вимова й читання, der / die / das, відмінки, порядок слів, Perfekt), план A2–B2 з іспитами Goethe / telc / ÖSD, тренажер чисел, цін, годинника («halb drei») і дат.',
+    flags: {
+      de: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 5 3" aria-hidden="true"><rect width="5" height="3" fill="#ffce00"/><rect width="5" height="2" fill="#dd0000"/><rect width="5" height="1" fill="#000"/></svg>'
+    },
+    theme: { light: '#9f1239', dark: '#fb7185' },
+    files: ['pack.js', 'gen.js', 'data/lessons-a0.js', 'data/lessons-a1a.js', 'data/lessons-a1b.js', 'data/reference.js', 'data/program.js', 'data/resources.js']
+  },
+  {
+    code: 'sk',
+    name: 'Словацька', native: 'Slovenčina',
+    levels: 'з нуля до B2',
+    about: 'Для життя у Словаччині: етап 0 і A1 (19 уроків), план A2–B2, тренажер чисел, цін, часу й дат, довідник відмінків, мовні вимоги для ВНЖ.',
+    // Прапор Словаччини (закон 63/1993 Z. z.): 2:3, щит заввишки 1/2 висоти, однаково віддалений від верху, низу й древка
+    flags: {
+      sk: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 600" aria-hidden="true"><rect width="900" height="600" fill="#ee1c25"/><rect width="900" height="400" fill="#0b4ea2"/><rect width="900" height="200" fill="#fff"/><path d="M150 150H390V300C390 390 330 425 270 450C210 425 150 390 150 300Z" fill="#fff" stroke="#fff" stroke-width="18"/><clipPath id="sk-shield"><path d="M150 150H390V300C390 390 330 425 270 450C210 425 150 390 150 300Z"/></clipPath><g clip-path="url(#sk-shield)"><rect x="150" y="150" width="240" height="300" fill="#ee1c25"/><path fill="#fff" d="M259 176h22v200h-22zM228 212h84v20h-84zM204 262h132v22H204z"/><g fill="#0b4ea2"><circle cx="270" cy="384" r="48"/><circle cx="190" cy="412" r="48"/><circle cx="350" cy="412" r="48"/><rect x="150" y="400" width="240" height="60"/></g></g></svg>'
+    },
+    theme: { light: '#0b4ea2', dark: '#7fb0f5' },
+    files: ['pack.js', 'gen.js', 'data/lessons-a0.js', 'data/lessons-a1a.js', 'data/lessons-a1b.js', 'data/reference.js', 'data/program.js', 'data/resources.js']
+  }
+];
+
+</script>
+<script>
+/* Polyglot — спільний рушій: стан додатка й мов, мовні пакети, озвучення, запис, перевірка відповідей, інтервальне повторення */
+window.PG = window.PG || {};
+(function (PG) {
+  'use strict';
+
+  // Мова-чернетка (draft: true у реєстрі) видна лише під час розробки в src/: build.mjs її не збирає
+  if (PG.BUILD && PG.LANGS) PG.LANGS = PG.LANGS.filter((l) => !l.draft);
+  PG.packs = PG.packs || {};
+  // Файли пакета (pack.js, gen.js, data/*.js) викликають PG.pack('xx') у довільному порядку, тож об'єкт створює перший
+  PG.pack = (code) => PG.packs[code] || (PG.packs[code] = { code, lessons: [] });
+  PG.langInfo = (code) => (PG.LANGS || []).find((l) => l.code === code) || null;
+
+  const clone = (o) => JSON.parse(JSON.stringify(o));
+  const UNSAFE = new Set(['__proto__', 'constructor', 'prototype']);
+  function merge(base, extra) {
+    for (const k of Object.keys(extra || {})) {
+      if (UNSAFE.has(k)) continue;
+      if (extra[k] && typeof extra[k] === 'object' && !Array.isArray(extra[k]) && base[k] && typeof base[k] === 'object' && !Array.isArray(base[k])) merge(base[k], extra[k]);
+      else base[k] = extra[k];
+    }
+    return base;
+  }
+  PG.clone = clone;
+  PG.merge = merge;
+  const readRaw = (key) => { try { return localStorage.getItem(key); } catch (e) { return null; } };
+  const parseObj = (raw) => { const d = JSON.parse(raw); if (!d || typeof d !== 'object' || Array.isArray(d)) throw new Error('не об\'єкт'); return d; };
+
+  // Ключі НЕ змінювати: інакше збережений вибір і прогрес не відкриються. Вони відрізняються від ключів старих
+  // тренажерів (sk-trainer-v1, en-trainer-v1), бо сайти GitHub Pages одного акаунта мають спільне сховище.
+  const APP_KEY = 'pg-app-v1';
+  const APP_VERSION = 1;
+  const APP_DEFAULTS = { v: APP_VERSION, lang: null, ui: { installTip: true } };
+  function loadApp() {
+    const raw = readRaw(APP_KEY);
+    if (!raw) return clone(APP_DEFAULTS);
+    try {
+      const a = merge(clone(APP_DEFAULTS), parseObj(raw));
+      if (!PG.langInfo(a.lang)) a.lang = null;
+      a.ui.installTip = a.ui.installTip !== false;
+      return a;
+    } catch (e) { console.warn('Не вдалося прочитати вибір мови', e); return clone(APP_DEFAULTS); }
+  }
+  PG.saveApp = function () {
+    try { localStorage.setItem(APP_KEY, JSON.stringify(PG.A)); } catch (e) { console.warn('Вибір мови не збережено', e); }
+  };
+
+  // Прогрес кожної мови — під власним ключем, а не в одному спільному записі: скидання, міграція чи пошкодження
+  // прогресу однієї мови не зачіпають інших, а вкладки з різними мовами не затирають одна одну
+  const LANG_PREFIX = 'pg-lang-v1:';
+  const LANG_VERSION = 1;   // версія схеми стану мови: змінили формат → +1 і крок у MIGRATIONS
+  // MIGRATIONS[n](s, pack) переводить стан версії n у версію n + 1 (змінює s на місці)
+  const MIGRATIONS = {};
+  PG.langKey = (code) => LANG_PREFIX + code;
+  function defaults(pack) {
+    return {
+      v: LANG_VERSION,
+      start: null,
+      settings: Object.assign({ voice: '', rate: 0.9, strict: false, newPerDay: 10, dir: 'mix' }, clone((pack.settings && pack.settings.defaults) || {})),
+      lessons: {},   // id -> {opened, theory, ex:{best,done}, speak, mission, skipped, run}
+      modules: {},   // id модуля програми -> true (ручні позначки для етапів без уроків)
+      cards: {},     // id картки -> {due,int,ease,reps,lapses}
+      dict: [],      // мій словник [{word, uk, note, ex, ipa, au:{<варіант>:url}, added}]
+      days: {},      // номер дня -> {ex, cards, speak}
+      newDay: { day: 0, count: 0 },
+      ui: Object.assign({ dictSort: 'new' }, clone(pack.uiDefaults || {}))
+    };
+  }
+  function migrate(s, pack) {
+    s.v = Math.floor(+s.v) || 1;
+    while (s.v < LANG_VERSION && MIGRATIONS[s.v]) { MIGRATIONS[s.v](s, pack); s.v++; }
+    return s;
+  }
+  // Записи словника приходять і з файлів імпорту, тож їх приводимо до рядків розумної довжини
+  const str = (v, max) => String(v == null ? '' : v).replace(/\s+/g, ' ').trim().slice(0, max);
+  // Записи носіїв — лише з відомих адрес: інакше файл імпорту міг би підсунути довільну адресу для <audio>
+  const AUDIO_OK = /^https:\/\/(api\.dictionaryapi\.dev\/media\/|ssl\.gstatic\.com\/dictionary\/|upload\.wikimedia\.org\/)[^\s"'<>]+\.(mp3|ogg|wav)$/i;
+  PG.cleanWord = function (w) {
+    if (!w || typeof w !== 'object') return null;
+    const out = { word: str(w.word, 200), uk: str(w.uk, 300) };
+    if (!out.word || !out.uk) return null;
+    const note = str(w.note, 300), ex = str(w.ex, 500), ipa = str(w.ipa, 100), added = str(w.added, 10);
+    if (note) out.note = note;
+    if (ex) out.ex = ex;
+    if (ipa) out.ipa = ipa;
+    if (/^\d{4}-\d{2}-\d{2}$/.test(added)) out.added = added;
+    if (w.au && typeof w.au === 'object') {
+      const au = {};
+      for (const k of Object.keys(w.au)) if (/^[a-z]{2}$/.test(k) && typeof w.au[k] === 'string' && AUDIO_OK.test(w.au[k])) au[k] = w.au[k];
+      if (Object.keys(au).length) out.au = au;
+    }
+    return out;
+  };
+  PG.cleanCard = function (c) {
+    if (!c || typeof c !== 'object') return null;
+    const int = (v, lo, hi) => Math.min(hi, Math.max(lo, Math.round(+v) || 0));
+    const due = Math.round(+c.due);
+    if (!isFinite(due)) return null;
+    return { due, int: int(c.int, 0, 36500), ease: Math.min(5, Math.max(1.3, +c.ease || 2.5)), reps: int(c.reps, 0, 100000), lapses: int(c.lapses, 0, 100000) };
+  };
+  // Ключ однакового слова: регістр, апострофи й зайві пробіли не роблять його новим словом
+  PG.dictKey = (w) => String(w).toLowerCase().replace(/[’‘`´]/g, "'").replace(/\s+/g, ' ').trim();
+  // Налаштування й словник потрапляють у розмітку, тож вони мають бути саме числами, відомими рядками й чистими записами
+  function tidy(s, pack) {
+    const st = s.settings;
+    st.voice = String(st.voice || '');
+    st.rate = Math.min(1.2, Math.max(0.5, +st.rate || 0.9));
+    st.strict = !!st.strict;
+    st.newPerDay = Math.min(50, Math.max(0, Math.round(+st.newPerDay) || 0));
+    if (!['mix', 'tl', 'uk'].includes(st.dir)) st.dir = 'mix';
+    if (pack.variants && !pack.variants.some((x) => x.id === st.variant)) st.variant = pack.variants[0].id;
+    if (pack.settings && pack.settings.tidy) pack.settings.tidy(st);
+    if (!['new', 'az', 'due'].includes(s.ui.dictSort)) s.ui.dictSort = 'new';
+    const seen = new Set();
+    s.dict = (Array.isArray(s.dict) ? s.dict : []).map(PG.cleanWord).filter((w) => w && !seen.has(PG.dictKey(w.word)) && seen.add(PG.dictKey(w.word)));
+    return s;
+  }
+  PG.tidyLang = (obj, pack) => tidy(merge(defaults(pack), migrate(obj, pack)), pack);
+
+  // newer — прогрес записала новіша версія тренажера: тоді нічого не записуємо, щоб старий код його не зіпсував;
+  // broken — збережене не вдалося прочитати; failed — останній запис не вдався
+  PG.store = { key: null, newer: false, broken: null, failed: null };
+  function loadLang(code) {
+    const pack = PG.pack(code), key = PG.langKey(code);
+    PG.store = { key, newer: false, broken: null, failed: null };
+    let raw = null;
+    try { raw = localStorage.getItem(key); } catch (e) { PG.store.broken = e; console.warn('Сховище недоступне', e); return defaults(pack); }
+    if (!raw) return defaults(pack);
+    try {
+      const data = parseObj(raw);
+      PG.store.newer = (+data.v || 1) > LANG_VERSION;
+      return PG.tidyLang(data, pack);
+    } catch (e) {
+      // Наступне збереження затерло б пошкоджений запис, тому копія лишається поруч для ручного відновлення
+      PG.store.broken = e;
+      console.warn('Не вдалося прочитати прогрес; копію збережено під ключем ' + key + '-broken', e);
+      try { localStorage.setItem(key + '-broken', raw); } catch (e2) { console.warn(e2); }
+      return defaults(pack);
+    }
+  }
+
+  PG.A = loadApp();
+  PG.reloadApp = () => { PG.A = loadApp(); };
+  PG.S = null;
+  PG.L = null;
+  PG.code = null;
+  let warnedAt = 0;
+  PG.save = function () {
+    if (!PG.S || PG.store.newer) return;
+    try {
+      localStorage.setItem(PG.store.key, JSON.stringify(PG.S));
+      PG.store.failed = null;
+    } catch (e) {
+      PG.store.failed = e;
+      console.warn('Прогрес не збережено', e);
+      if (Date.now() - warnedAt > 60000 && document.body) {
+        warnedAt = Date.now();
+        PG.toast('⚠️ Прогрес не зберігся (' + (e && e.name || e) + '). Подробиці — у ⚙️ «Налаштування».', 6000);
+      }
+    }
+  };
+  // Зберігається завжди весь стан мови, тож без перечитування наступне збереження тут затерло б те, що записала
+  // інша вкладка чи встановлений додаток. Мову цієї вкладки чужий вибір не змінює: його відкриє лише наступний запуск.
+  window.addEventListener('storage', (e) => {
+    if (e.key === APP_KEY || e.key === null) { const lang = PG.A.lang; PG.A = loadApp(); if (PG.code) PG.A.lang = lang; }
+    if (PG.code && (e.key === PG.store.key || e.key === null)) {
+      PG.S = loadLang(PG.code);
+      if (PG.onExternalChange) PG.onExternalChange();
+    }
+  });
+
+  // persisted: true — браузер не видалить дані сайту сам, навіть коли забракне місця; false — може; null — невідомо.
+  // Chrome вирішує без запитання: зазвичай дозволяє встановленим додаткам, закладкам і сайтам, якими часто користуються.
+  PG.Storage = {
+    persisted: null, listeners: [],
+    async check(ask) {
+      const st = navigator.storage;
+      if (!st || !st.persisted) return this.persisted;
+      try {
+        let p = await st.persisted();
+        if (!p && ask && st.persist) p = await st.persist();
+        this.persisted = !!p;
+      } catch (e) { this.persisted = null; }
+      this.listeners.forEach((f) => f());
+      return this.persisted;
+    }
+  };
+  PG.isInstalled = () => !!(window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true;
+  // Chrome віддає подію beforeinstallprompt один раз; зберігаємо її, щоб кнопка «Встановити» спрацювала пізніше
+  PG.Install = {
+    prompt: null, listeners: [],
+    notify() { this.listeners.forEach((f) => f()); },
+    async run() {
+      const p = this.prompt; if (!p) return;
+      this.prompt = null;
+      p.prompt();
+      try { await p.userChoice; } catch (e) { console.warn(e); }
+      this.notify();
+    }
+  };
+  window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); PG.Install.prompt = e; PG.Install.notify(); });
+  window.addEventListener('appinstalled', () => { PG.Install.prompt = null; PG.Storage.check(true); PG.Install.notify(); });
+  PG.replaceState = function (obj) { PG.S = PG.tidyLang(clone(obj), PG.L); PG.save(); };
+  PG.resetState = function () { PG.S = defaults(PG.L); PG.save(); };
+  // Часткові скидання зберігають налаштування і мій словник
+  PG.resetLessons = function () { PG.S.lessons = {}; PG.S.modules = {}; PG.save(); };
+  PG.resetWords = function () { PG.S.cards = {}; PG.S.newDay = { day: 0, count: 0 }; PG.save(); };
+
+  // Номер дня рахується за місцевим часом: інакше заняття о пів на першу ночі потрапляло б у вчорашній день
+  PG.today = function () {
+    const d = new Date();
+    return Math.floor((d.getTime() - d.getTimezoneOffset() * 60000) / 86400000);
+  };
+  PG.dayOfWeek = function (dayNum) { return new Date(dayNum * 86400000).getUTCDay(); }; // 0 = неділя
+  PG.isoDay = (dayNum) => new Date(dayNum * 86400000).toISOString().slice(0, 10);
+  PG.logActivity = function (kind, n) {
+    const t = PG.today();
+    const d = PG.S.days[t] || (PG.S.days[t] = { ex: 0, cards: 0, speak: 0 });
+    d[kind] = (d[kind] || 0) + (n || 1);
+    if (!PG.S.start) PG.S.start = t;
+    PG.save();
+  };
+  // Вихідні не розривають серію: навчання заплановано лише на робочі дні
+  PG.streakOf = function (days) {
+    const t = PG.today();
+    let day = t, count = 0;
+    if (!days[t]) day = t - 1;
+    for (let i = 0; i < 800; i++, day--) {
+      const active = !!days[day];
+      const wd = PG.dayOfWeek(day);
+      if (active) count++;
+      else if (wd === 0 || wd === 6) continue;
+      else break;
+    }
+    return count;
+  };
+  PG.streak = () => PG.streakOf(PG.S.days);
+
+  PG.esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  PG.shuffle = function (a) {
+    a = a.slice();
+    for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+    return a;
+  };
+  // [[текст]] або [[текст|що озвучити]] → клікабельний фрагмент мови навчання. Лише для даних уроків: вони вже є HTML
+  PG.rich = function (html) {
+    return String(html || '').replace(/\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g, (m, shown, said) =>
+      '<span class="say" data-say="' + PG.esc(String(said || shown).replace(/<[^>]+>/g, '')) + '">' + shown + '</span>');
+  };
+  // Для тексту, який увів учень (мій словник, імпорт), екрануються і показане, і озвучуване
+  PG.sayHtml = (shown, said) => '<span class="say" data-say="' + PG.esc(said == null ? shown : said) + '">' + PG.esc(shown) + '</span>';
+  // Примітки в дужках («(m)», «(US)») не озвучуються, а «flat / apartment» звучить як перелік
+  PG.sayText = (s) => String(s).replace(/\s\/\s/g, ', ').replace(/\s*\([^)]*\)/g, '').trim();
+  PG.toast = function (msg, ms) {
+    let el = document.getElementById('toast');
+    if (!el) { el = document.createElement('div'); el.id = 'toast'; el.className = 'toast'; document.body.appendChild(el); }
+    el.textContent = msg; el.classList.add('show');
+    clearTimeout(el._t); el._t = setTimeout(() => el.classList.remove('show'), ms || 2200);
+  };
+  // Телефон чи планшет: там екранна клавіатура закриває пів екрана, а підказки про клавіші не мають сенсу
+  PG.touch = () => !!(window.matchMedia && matchMedia('(pointer: coarse)').matches);
+  // Для порівняння перекладів і пошуку, а не відповідей: відповіді перевіряє мовний пакет (PG.check),
+  // бо правила різні (скорочення, діакритика)
+  PG.norm = (s) => String(s).toLowerCase().replace(/[’‘`´]/g, "'").replace(/[.,!?;:"„“”«»()…–—-]/g, ' ').replace(/\s+/g, ' ').trim();
+  // Пошук без діакритики: учень без словацької розкладки теж має знайти «môcť», набравши «moct»
+  PG.fold = (s) => String(s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+  // Одна описка (пропущена, зайва, змінена чи переставлена буква) у слові з 6+ літер, коли останні дві літери збігаються:
+  // так «beatiful» — майже, а «work» замість «works» чи «studies» замість «studied» — помилка граматики, а не описка.
+  // Спільне для пакетів, щоб «майже» в усіх мовах означало те саме
+  PG.oneTypo = function (a, b) {
+    if (a === b || Math.min(a.length, b.length) < 5 || Math.max(a.length, b.length) < 6 || Math.abs(a.length - b.length) > 1) return false;
+    if (a.slice(-2) !== b.slice(-2)) return false;
+    let i = 0;
+    while (i < a.length && a[i] === b[i]) i++;
+    if (a.length === b.length) {
+      if (a.slice(i + 1) === b.slice(i + 1)) return true;
+      return a[i] === b[i + 1] && a[i + 1] === b[i] && a.slice(i + 2) === b.slice(i + 2);
+    }
+    const [l, s] = a.length > b.length ? [a, b] : [b, a];
+    return l.slice(i + 1) === s.slice(i);
+  };
+  // Лише одне слово з опискою на речення: дві описки — це вже не неуважність, а незнання
+  PG.nearTypo = function (x, y) {
+    const a = x.split(' '), b = y.split(' ');
+    if (a.length !== b.length) return false;
+    let diff = 0;
+    for (let k = 0; k < a.length; k++) if (a[k] !== b[k]) { if (++diff > 1 || !PG.oneTypo(a[k], b[k])) return false; }
+    return diff === 1;
+  };
+  PG.cap =(s) => (s ? s[0].toUpperCase() + s.slice(1) : s);
+
+  // Варіанти мови (американська / британська англійська тощо) задає пакет; у мови без варіантів список порожній
+  PG.variants = () => (PG.L && PG.L.variants) || [];
+  PG.variant = function () {
+    const vs = PG.variants();
+    if (!vs.length) return null;
+    const v = PG.S && PG.S.settings.variant;
+    return vs.some((x) => x.id === v) ? v : vs[0].id;
+  };
+  PG.variantInfo = (id) => PG.variants().find((x) => x.id === id) || null;
+  PG.otherVariant = (v) => { const o = PG.variants().find((x) => x.id !== (v || PG.variant())); return o ? o.id : null; };
+  // {{варіант1|варіант2}} у змісті уроку: показується варіант учня. Розбір знає про [[показати|озвучити]] усередині
+  function resolveTokens(s, v, both) {
+    if (s.indexOf('{{') < 0) return s;
+    const vs = PG.variants(), at0 = Math.max(0, vs.findIndex((x) => x.id === v));
+    let out = '', i = 0;
+    while (i < s.length) {
+      const at = s.indexOf('{{', i);
+      if (at < 0) { out += s.slice(i); break; }
+      out += s.slice(i, at);
+      let depth = 0, j = at + 2;
+      const bars = [];
+      for (; j < s.length; j++) {
+        if (s.startsWith('[[', j)) { depth++; j++; } else if (s.startsWith(']]', j)) { depth--; j++; } else if (s[j] === '|' && !depth) bars.push(j);
+        else if (s.startsWith('}}', j) && !depth) break;
+      }
+      if (j >= s.length || bars.length !== Math.max(1, vs.length - 1)) throw new Error('Погана розмітка {{…|…}}: ' + s.slice(at, at + 60));
+      const parts = [], cuts = [at + 1].concat(bars, [j]);
+      for (let k = 0; k < cuts.length - 1; k++) parts.push(s.slice(cuts[k] + 1, cuts[k + 1]));
+      const mine = parts[at0];
+      out += mine;
+      if (both) parts.forEach((p, k) => { if (k !== at0 && p && p !== mine) out += ' <span class="vv">' + PG.esc(vs[k].tag) + ' ' + p + '</span>'; });
+      i = j + 2;
+    }
+    return out;
+  }
+  /**
+   * Текст змісту під варіант учня: розмітка {{…|…}} і правопис (pack.spell). opts.nv — без зміни правопису (вправа саме про різницю);
+   * opts.both — у розмітці показати й інший варіант дрібно («apartment UK flat») — для слів і приміток
+   */
+  PG.v = function (text, v, opts) {
+    if (text == null || !PG.variants().length) return text;
+    v = v || PG.variant();
+    opts = opts || {};
+    let s = resolveTokens(String(text), v, opts.both);
+    if (!opts.nv && PG.L.spell) s = PG.L.spell(s, v);
+    return s;
+  };
+  // Слово уроку: [слово, переклад, примітка, {<варіант>: слово}?] → { mine, other, note } — other лише якщо відрізняється
+  PG.vWord = function (w, v) {
+    if (!PG.variants().length) return { mine: w[0], other: '', note: w[2] || '' };
+    v = v || PG.variant();
+    const o = PG.otherVariant(v);
+    const pick = (x) => (w[3] && w[3][x]) || PG.v(w[0], x);
+    const mine = pick(v), other = o ? pick(o) : mine;
+    return { mine, other: other !== mine ? other : '', note: PG.v(w[2] || '', v, { both: true }) };
+  };
+  // Вправа під варіант учня. Відповіді приймаються в усіх варіантах: учень з американським вибором може знати британське слово
+  PG.vSpec = function (spec, v) {
+    const it = Object.assign({}, spec);
+    if (spec.t === 'g' || !PG.variants().length) return it;
+    v = v || PG.variant();
+    const opt = { nv: spec.nv };
+    for (const k of ['q', 'e', 'h', 'say']) if (it[k]) it[k] = PG.v(it[k], v, opt);
+    if (it.t === 'c') it.o = it.o.map((x) => PG.v(x, v, opt));
+    else if (it.a != null) {
+      const list = Array.isArray(it.a) ? it.a : [it.a], mine = list.map((x) => PG.v(x, v, opt));
+      let all = mine;
+      if (it.t !== 'o') for (const o of PG.variants()) if (o.id !== v) all = all.concat(list.map((x) => PG.v(x, o.id, opt)));
+      all = Array.from(new Set(all));
+      it.a = all.length > 1 ? all : all[0];
+    }
+    return it;
+  };
+
+  // 'ok' | 'near' (майже: описка чи діакритика — зараховується, якщо не ввімкнено суворий режим) | 'bad'.
+  // Правила в кожної мови свої (скорочення й правопис US/UK, діакритика), тому перевіряє мовний пакет
+  PG.check = (input, answers, exact) => PG.L.check(input, answers, exact);
+
+  // Два рушії озвучення: 1) голос системи мови навчання (Web Speech API, працює й офлайн); 2) онлайн-голос Google
+  // (потрібен інтернет) — коли голосу цієї мови чи варіанта в системі немає або учень вибрав його сам.
+  // Текст ніколи не віддаємо голосу іншої мови: браузер прочитав би словацьке слово з англійською вимовою.
+  const ONLINE = '@online';   // значення settings.voice для онлайн-голосу; '' — вибір автоматично
+  const ONLINE_URLS = [       // друга адреса — запасна, якщо перша не відповіла
+    (q, tl) => 'https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=' + tl + '&q=' + encodeURIComponent(q),
+    (q, tl) => 'https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=' + tl + '&q=' + encodeURIComponent(q)
+  ];
+  // Онлайн-сервіс приймає до ~200 символів за запит: ріжемо за реченнями, а задовгі речення — між словами
+  PG.ttsChunks = function (text, max) {
+    const out = [];
+    let cur = '';
+    for (const w of String(text).replace(/\s+/g, ' ').trim().split(' ')) {
+      if (cur && (cur + ' ' + w).length > max) { out.push(cur); cur = w; } else cur = cur ? cur + ' ' + w : w;
+      if (/[.!?…]$/.test(cur) && cur.length > max / 2) { out.push(cur); cur = ''; }
+    }
+    if (cur) out.push(cur);
+    return out;
+  };
+  // Нейронні голоси (Edge «Natural», Google, Apple «Premium / Enhanced») звучать набагато природніше за старі системні
+  const quality = (v) => (/natural|neural/i.test(v.name) ? 3 : /google|premium|enhanced|siri/i.test(v.name) ? 2 : v.localService ? 1 : 0);
+  // Голос en-AU чи en-IE не належить жодному варіанту ('other'), але для англійської він кращий за онлайн-голос
+  const accentOf = (voice) => { const x = PG.variants().find((vr) => vr.voice && vr.voice.test(voice.lang)); return x ? x.id : 'other'; };
+  PG.TTS = {
+    ONLINE,
+    voices: [],
+    ready: false, settled: false, listeners: [],
+    system: 'speechSynthesis' in window,
+    audio: null,
+    token: 0,                 // події застарілого озвучення (після нового say) мають ігноруватися
+    accentOf,
+    init() {
+      const notify = () => this.listeners.forEach((f) => f());
+      window.addEventListener('online', notify);
+      window.addEventListener('offline', notify);
+      if (!this.system) { this.ready = this.settled = true; notify(); return; }
+      speechSynthesis.onvoiceschanged = () => { this.load(); notify(); };
+      this.load();
+      notify();
+      setTimeout(() => { this.settled = true; this.load(); notify(); }, 1500);
+    },
+    // Список голосів залежить від мови навчання, тож після зміни мови його перечитують
+    load() {
+      const re = PG.L && PG.L.tts && PG.L.tts.voices;
+      this.voices = !this.system || !re ? [] : speechSynthesis.getVoices().filter((v) => v && v.lang && re.test(v.lang) && v.name && v.name !== 'undefined')
+        .sort((a, b) => quality(b) - quality(a));
+      this.ready = true;
+    },
+    // Голос системи для варіанта, яким говоримо зараз, або null — тоді говорить онлайн-голос
+    voice(variant) {
+      const v = this.voices, want = PG.S.settings.voice, cur = PG.variant();
+      variant = variant || cur;
+      if (variant === cur) {
+        if (want === ONLINE) return null;
+        // Вибраний голос іншого варіанта не має «перебивати» варіант: британське слово мусить звучати по-британськи
+        const chosen = v.find((x) => x.name === want);
+        if (chosen && (!variant || accentOf(chosen) === variant || accentOf(chosen) === 'other')) return chosen;
+      }
+      return (variant ? v.find((x) => accentOf(x) === variant) : v[0]) || null;
+    },
+    onlineLang(variant) { const vi = PG.variantInfo(variant || PG.variant()); return (vi && vi.online) || PG.L.tts.online; },
+    label(variant) {
+      const v = this.voice(variant);
+      if (v) return v.name;
+      const vi = PG.variantInfo(variant || PG.variant());
+      return 'Google — ' + (vi ? vi.name + ' вимова' : PG.L.names.nom) + ', онлайн';
+    },
+    // true — озвучити нічим: голосу мови в системі немає, а інтернету для онлайн-голосу теж немає
+    silent() { return this.settled && !this.voices.length && navigator.onLine === false; },
+    stop() {
+      this.token++;
+      if (this.system) speechSynthesis.cancel();
+      if (this.audio) this.audio.pause();
+    },
+    // variant — щоб послухати слово з іншим акцентом; без нього — з налаштувань
+    say(text, rate, variant) {
+      if (!text || !PG.L) return;
+      this.stop();
+      rate = rate || PG.S.settings.rate || 0.9;
+      variant = variant || PG.variant();
+      const v = this.voice(variant);
+      if (v) this.sayLocal(text, rate, v); else this.sayOnline(text, rate, variant);
+    },
+    sayLocal(text, rate, v) {
+      const u = new SpeechSynthesisUtterance(text);
+      u.lang = v.lang || PG.L.tts.lang;
+      u.voice = v;
+      u.rate = rate;
+      speechSynthesis.speak(u);
+    },
+    sayOnline(text, rate, variant) {
+      const parts = PG.ttsChunks(text, 180), token = this.token, tl = this.onlineLang(variant);
+      // Один <audio> на всю сесію: Safari дозволяє вже «розблокованому» елементу грати без нового натискання
+      const a = this.audio || (this.audio = new Audio());
+      let i = 0, url = 0;
+      const play = () => {
+        a.src = ONLINE_URLS[url](parts[i], tl);
+        a.defaultPlaybackRate = a.playbackRate = rate;   // нове src скидає швидкість, тому лише після нього
+        a.play().catch((e) => { if (token === this.token && e && e.name === 'NotAllowedError') PG.toast('Натисніть 🔊, щоб послухати'); });
+      };
+      a.onended = () => { if (token === this.token && ++i < parts.length) play(); };
+      a.onerror = () => {
+        if (token !== this.token) return;
+        if (++url < ONLINE_URLS.length) { play(); return; }
+        const v = this.voices[0];
+        if (v) { this.sayLocal(parts.slice(i).join(' '), rate, v); return; }   // без інтернету рятує будь-який голос цієї мови
+        PG.toast('🔇 Онлайн-голос недоступний (немає інтернету?), а ' + PG.L.names.adjGen + ' голосу в системі немає. Див. ⚙️ «Налаштування».');
+      };
+      play();
+    },
+    // Запис живої людини зі словника — звичайний аудіофайл, без синтезу
+    playUrl(url, rate) {
+      this.stop();
+      const a = this.audio || (this.audio = new Audio()), token = this.token;
+      a.onended = null;
+      a.onerror = () => { if (token === this.token) PG.toast('Запис носія не завантажився (немає інтернету?)'); };
+      a.src = url;
+      a.defaultPlaybackRate = a.playbackRate = rate || 1;
+      a.play().catch(() => {});
+    }
+  };
+
+  PG.Rec = {
+    mr: null, url: null,
+    supported: !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia && window.MediaRecorder),
+    async start(onStop, onError) {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const chunks = [];
+        this.mr = new MediaRecorder(stream);
+        this.mr.ondataavailable = (e) => chunks.push(e.data);
+        this.mr.onstop = () => {
+          stream.getTracks().forEach((t) => t.stop());
+          if (this.url) URL.revokeObjectURL(this.url);
+          this.url = URL.createObjectURL(new Blob(chunks, { type: this.mr.mimeType || 'audio/webm' }));
+          onStop(this.url);
+        };
+        this.mr.start();
+      } catch (e) { onError(e); }
+    },
+    stop() { if (this.mr && this.mr.state !== 'inactive') this.mr.stop(); },
+    active() { return !!(this.mr && this.mr.state === 'recording'); }
+  };
+
+  PG.recorderWidget = function (container) {
+    if (!PG.Rec.supported) {
+      container.innerHTML = '<span class="small muted">Запис голосу недоступний у цьому браузері.</span>';
+      return;
+    }
+    container.innerHTML = '<button class="btn rec-btn">● Записати себе</button> <audio class="rec-audio" controls style="display:none;vertical-align:middle;max-width:260px"></audio>';
+    const btn = container.querySelector('.rec-btn');
+    const audio = container.querySelector('.rec-audio');
+    btn.onclick = () => {
+      if (PG.Rec.active()) { PG.Rec.stop(); return; }
+      PG.Rec.start((url) => {
+        btn.textContent = '● Записати ще раз';
+        audio.src = url; audio.style.display = '';
+        PG.logActivity('speak');
+      }, (e) => {
+        btn.textContent = '● Записати себе';
+        PG.toast('Немає доступу до мікрофона: ' + (e && e.name ? e.name : e));
+      });
+      btn.textContent = '■ Зупинити запис';
+    };
+  };
+
+  // У зібраній версії (docs/) пакет — один файл langs/<код>.<відбиток>.js (PG.BUNDLES від build.mjs): відбиток у назві
+  // не дає HTTP-кешу підсунути старий пакет до нового рушія. У src/ (розробка) файли пакета вантажаться по одному.
+  const loading = {};
+  PG.loadPack = function (code) {
+    const info = PG.langInfo(code);
+    if (!info) return Promise.reject(new Error('Невідома мова: ' + code));
+    if (PG.packs[code] && PG.packs[code].loaded) return Promise.resolve(PG.packs[code]);
+    if (loading[code]) return loading[code];
+    const urls = PG.BUNDLES ? [PG.BUNDLES[code]] : info.files.map((f) => 'langs/' + code + '/' + f);
+    loading[code] = new Promise((resolve, reject) => {
+      let left = urls.length, failed = false;
+      urls.forEach((src) => {
+        const s = document.createElement('script');
+        s.src = src;
+        s.async = false;   // порядок виконання = порядок файлів у реєстрі, а він же — порядок уроків
+        s.onload = () => { if (!failed && --left === 0) { delete loading[code]; PG.pack(code).loaded = true; resolve(PG.pack(code)); } };
+        s.onerror = () => {
+          if (failed) return;
+          failed = true;
+          // Частково виконаний пакет мав би половину уроків, а повторна спроба додала б їх удруге
+          delete PG.packs[code]; delete loading[code];
+          reject(new Error('Не вдалося завантажити ' + src + ' (немає інтернету?)'));
+        };
+        document.head.appendChild(s);
+      });
+    });
+    return loading[code];
+  };
+  // Окремо від activate, бо validate.mjs виконує файли пакета в Node сам і завантажувати нічого не треба
+  PG.useLang = function (code) {
+    const pack = PG.packs[code];
+    if (!pack) throw new Error('Пакет «' + code + '» не завантажено');
+    PG.L = pack;
+    PG.code = code;
+    PG.lessons = pack.lessons;
+    PG.program = pack.program;
+    PG.ref = pack.ref || [];
+    PG.resources = pack.resources || [];
+    PG.gen = pack.gen;
+    firstOf = null;
+    PG.S = loadLang(code);
+    return pack;
+  };
+  PG.activate = async function (code) {
+    await PG.loadPack(code);
+    PG.useLang(code);
+    PG.A.lang = code;
+    PG.saveApp();
+    PG.TTS.load();
+  };
+  // Екран вибору мови показує підсумок кожної мови, не завантажуючи її пакет: лише зі збереженого запису
+  PG.langSummary = function (code) {
+    let s = null;
+    if (code === PG.code) s = PG.S;
+    else { const raw = readRaw(PG.langKey(code)); if (raw) try { s = parseObj(raw); } catch (e) { s = null; } }
+    if (!s) return null;
+    const ls = Object.values(s.lessons && typeof s.lessons === 'object' ? s.lessons : {});
+    const days = s.days && typeof s.days === 'object' ? s.days : {};
+    const last = Object.keys(days).map(Number).filter(isFinite).sort((a, b) => b - a)[0];
+    return {
+      done: ls.filter((x) => x && x.ex && x.ex.done).length,
+      skipped: ls.filter((x) => x && x.skipped && !(x.ex && x.ex.done)).length,
+      words: Object.values(s.cards || {}).filter((c) => c && c.reps > 0).length,
+      dict: Array.isArray(s.dict) ? s.dict.length : 0,
+      streak: PG.streakOf(days),
+      last: last == null ? null : last
+    };
+  };
+
+  PG.lessons = [];
+  PG.lessonById = (id) => PG.lessons.find((l) => l.id === id);
+  PG.lessonState = function (id) { return PG.S.lessons[id] || (PG.S.lessons[id] = {}); };
+  // Стан уроку: {opened, theory, ex:{best,done}, speak, mission, skipped, run}
+  //   done    — вправи виконано на ≥ 80%;  skipped — учень пропустив урок («вже знаю» / «почати з іншого уроку»);
+  //   run     — незавершений підхід до вправ (див. exercises.js), щоб продовжити пізніше
+  PG.lessonDone = (id) => !!(PG.S.lessons[id] && PG.S.lessons[id].ex && PG.S.lessons[id].ex.done);
+  PG.lessonSkipped = (id) => !!(PG.S.lessons[id] && PG.S.lessons[id].skipped) && !PG.lessonDone(id);
+  PG.lessonClosed = (id) => PG.lessonDone(id) || PG.lessonSkipped(id);
+  PG.currentLesson = function () { return PG.lessons.find((l) => !PG.lessonClosed(l.id)) || PG.lessons[PG.lessons.length - 1]; };
+  PG.skipLesson = function (id, on) { const st = PG.lessonState(id); if (on) st.skipped = true; else delete st.skipped; PG.save(); };
+  // «Пройти наново» скидає позначки й вправи, але слова уроку лишаються в повторенні
+  PG.resetLesson = function (id) { const st = PG.lessonState(id); ['theory', 'ex', 'speak', 'mission', 'skipped', 'run'].forEach((k) => delete st[k]); PG.save(); };
+  PG.startFrom = function (id) {
+    for (const l of PG.lessons) { if (l.id === id) break; if (!PG.lessonDone(l.id)) PG.lessonState(l.id).skipped = true; }
+    delete PG.lessonState(id).skipped;
+    PG.save();
+  };
+
+  PG.cardId = (lessonId, word) => lessonId + '|' + word;
+  // Слово, що є в кількох уроках, — одна картка з id за першим уроком, де воно з'являється. Так id не залежить від того,
+  // який урок учень відкрив першим, і прогрес слова не губиться
+  let firstOf = null;
+  function firstMap(pack) {
+    const m = new Map();
+    (pack.lessons || []).forEach((l) => (l.vocab || []).forEach((w) => { const k = w[0].toLowerCase(); if (!m.has(k)) m.set(k, [l.id, w[0]]); }));
+    return m;
+  }
+  const firstLesson = (word) => (firstOf || (firstOf = firstMap(PG.L))).get(word.toLowerCase());
+  // Слова з уроків, які учень уже відкривав, + мій словник. only: 'my' — лише мій словник
+  PG.allWords = function (only) {
+    const out = [], seen = new Set();
+    if (only !== 'my') PG.lessons.forEach((l) => {
+      if (!(PG.S.lessons[l.id] && PG.S.lessons[l.id].opened)) return;
+      (l.vocab || []).forEach((w) => {
+        const [lid, word] = firstLesson(w[0]) || [l.id, w[0]], id = PG.cardId(lid, word);
+        if (seen.has(id)) return;
+        seen.add(id);
+        const vw = PG.vWord(w);
+        out.push({ id, word: vw.mine, alt: vw.other, uk: w[1], note: vw.note, lesson: l.id });
+      });
+    });
+    PG.S.dict.forEach((w) => out.push({ id: PG.cardId('my', w.word), word: w.word, uk: w.uk, note: w.note || '', ipa: w.ipa || '', ex: w.ex || '', au: w.au, lesson: 'my' }));
+    return out;
+  };
+  PG.srsQueue = function (only) {
+    const t = PG.today();
+    const words = PG.allWords(only);
+    const due = PG.shuffle(words.filter((w) => PG.S.cards[w.id] && PG.S.cards[w.id].due <= t));
+    if (PG.S.newDay.day !== t) PG.S.newDay = { day: t, count: 0 };
+    const room = Math.max(0, (PG.S.settings.newPerDay || 10) - PG.S.newDay.count);
+    const fresh = words.filter((w) => !PG.S.cards[w.id]).slice(0, room);
+    return { due, fresh, total: due.length + fresh.length };
+  };
+  PG.srsCounts = function (only) {
+    const t = PG.today();
+    const words = PG.allWords(only);
+    const due = words.filter((w) => PG.S.cards[w.id] && PG.S.cards[w.id].due <= t).length;
+    const known = words.filter((w) => PG.S.cards[w.id] && PG.S.cards[w.id].reps > 0).length;
+    const unseen = words.filter((w) => !PG.S.cards[w.id]).length;
+    return { due, known, unseen, all: words.length };
+  };
+  function nextInterval(c, grade) {
+    if (c.reps === 0) return grade === 4 ? 3 : 1;
+    if (c.reps === 1) return grade === 2 ? 2 : grade === 4 ? 6 : 4;
+    return Math.round(c.int * (grade === 2 ? 1.2 : grade === 4 ? c.ease * 1.3 : c.ease));
+  }
+  // grade: 1 знову, 2 важко, 3 добре, 4 легко
+  PG.srsGrade = function (word, grade) {
+    const t = PG.today();
+    let c = PG.S.cards[word.id];
+    if (!c) {
+      c = PG.S.cards[word.id] = { due: t, int: 0, ease: 2.5, reps: 0, lapses: 0 };
+      if (PG.S.newDay.day !== t) PG.S.newDay = { day: t, count: 0 };
+      PG.S.newDay.count++;
+    }
+    if (grade === 1) {
+      c.lapses++; c.reps = 0; c.int = 0; c.ease = Math.max(1.3, c.ease - 0.2); c.due = t;
+    } else {
+      const next = nextInterval(c, grade);
+      if (grade === 2) c.ease = Math.max(1.3, c.ease - 0.15);
+      if (grade === 4) c.ease += 0.15;
+      c.int = Math.max(1, next); c.reps++; c.due = t + c.int;
+    }
+    PG.logActivity('cards');
+    PG.save();
+  };
+  PG.nextIntervalLabel = function (word, grade) {
+    if (grade === 1) return 'сьогодні';
+    const next = Math.max(1, nextInterval(PG.S.cards[word.id] || { int: 0, ease: 2.5, reps: 0 }, grade));
+    return next < 30 ? next + ' дн.' : Math.round(next / 30) + ' міс.';
+  };
+})(window.PG);
+
+</script>
+<script>
+/* Рушій вправ: c — вибір (перший варіант правильний), i — введення, o — порядок слів, l — диктант, g — генерована (gen.js пакета) */
+(function (PG) {
+  'use strict';
+  const esc = PG.esc;
+  const shown = (a) => (Array.isArray(a) ? a[0] : a);
+
+  // Клавіатура з літерами мови (pack.keyboard): без місцевої розкладки інакше не набрати á, ä, č…
+  PG.letterKeyboard = function (getInput) {
+    const letters = PG.L.keyboard;
+    if (!letters || !letters.length) return null;
+    const wrap = document.createElement('div');
+    wrap.className = 'dia';
+    let upper = false;
+    const draw = () => {
+      wrap.innerHTML = letters.map((ch) => '<button type="button" data-ch="' + esc(ch) + '">' + esc(upper ? ch.toUpperCase() : ch) + '</button>').join('') +
+        '<button type="button" data-shift="1" title="Великі літери">⇧</button>';
+    };
+    draw();
+    // mousedown не забирає фокус з поля вводу, інакше курсор зникав би після кожної літери
+    wrap.addEventListener('mousedown', (e) => e.preventDefault());
+    wrap.addEventListener('click', (e) => {
+      const b = e.target.closest('button'); if (!b) return;
+      if (b.dataset.shift) { upper = !upper; draw(); return; }
+      const inp = getInput(); if (!inp) return;
+      const ch = upper ? b.dataset.ch.toUpperCase() : b.dataset.ch;
+      const s = inp.selectionStart ?? inp.value.length, en = inp.selectionEnd ?? inp.value.length;
+      inp.value = inp.value.slice(0, s) + ch + inp.value.slice(en);
+      inp.focus(); inp.setSelectionRange(s + 1, s + 1);
+    });
+    return wrap;
+  };
+
+  /**
+   * specs — вправи; opts.onFinish(score%), opts.drill (без «урок зараховано»),
+   * opts.saveKey — id уроку: тоді незавершений підхід зберігається в стані уроку (run) і його можна продовжити пізніше.
+   * run = { n: кількість вправ, q: [[індекс, повтор?], …], pos, ft: {індекс: правильно з першої спроби?}, sk: {індекс: пропущено} }
+   */
+  PG.runExercises = function (root, specs, opts) {
+    opts = opts || {};
+    const lst = opts.saveKey ? PG.lessonState(opts.saveKey) : null;
+    const last = {}; // останній показаний варіант кожної вправи: генеровані щоразу нові, а підсумок має показати саме той
+    // Варіант мови застосовується під час показу: учень може перемкнути його посеред підходу
+    const make = (i) => (last[i] = Object.assign(specs[i].t === 'g' ? PG.gen.make(specs[i]) : PG.vSpec(specs[i]), { _i: i }));
+    const fresh = () => ({ n: specs.length, q: PG.shuffle(specs.map((_, i) => [i, 0])), pos: 0, ft: {}, sk: {} });
+    const save = () => { if (lst) { lst.run = run; PG.save(); } };
+    const clear = () => { if (lst) { delete lst.run; PG.save(); } };
+    let run;
+
+    const saved = lst && lst.run && lst.run.n === specs.length && Array.isArray(lst.run.q) && (lst.run.pos > 0 || Object.keys(lst.run.ft || {}).length) && lst.run.pos < lst.run.q.length ? lst.run : null;
+    if (saved && !opts.forceNew) {
+      const answered = Object.keys(saved.ft).length;
+      root.innerHTML = '<div class="ex-box card center"><h3>⏸ Незавершений підхід</h3><p>Ви вже виконали <b>' + answered + ' з ' + specs.length + '</b> завдань цього уроку.</p>' +
+        '<div class="row" style="justify-content:center"><button class="btn primary cont">▶ Продовжити</button><button class="btn restart">↺ Почати заново</button></div></div>';
+      root.querySelector('.cont').onclick = () => { run = saved; next(); };
+      root.querySelector('.restart').onclick = () => { run = fresh(); save(); next(); };
+      return;
+    }
+    run = fresh();
+    if (lst) delete lst.run;
+
+    function finish() {
+      const total = specs.length;
+      const ok = Object.values(run.ft).filter(Boolean).length;
+      const skipped = Object.keys(run.sk).length;
+      const score = total ? Math.round((ok / total) * 100) : 0;
+      const wrong = Object.keys(run.ft).filter((i) => run.ft[i] === false).map((i) => last[i] || make(+i));
+      clear();
+      root.innerHTML = '<div class="ex-box card center">' +
+        '<h2>' + (score >= 80 ? '🎉 Чудово!' : score >= 60 ? '👍 Непогано!' : '💪 Варто повторити') + '</h2>' +
+        '<div class="stat">' + score + '%</div><p class="muted">правильно з першої спроби: ' + ok + ' з ' + total + (skipped ? ' · пропущено: ' + skipped : '') + '</p>' +
+        (opts.drill ? '' : score >= 80 ? '<p class="good">Урок зараховано (потрібно ≥ 80%).</p>' : '<p class="note">Для зарахування потрібно ≥ 80%. Перечитайте теорію і спробуйте ще раз — це нормально. Якщо тему ви вже знаєте, урок можна пропустити кнопкою вгорі.</p>') +
+        (wrong.length ? '<div class="small" style="text-align:left"><b>Де були помилки або пропуски:</b><ul>' + wrong.map((w) => '<li>' + esc(stripTags(w.q || w.h || 'Диктант')) + ' → <b>' + esc(answerText(w)) + '</b></li>').join('') + '</ul></div>' : '') +
+        '<div class="row" style="justify-content:center;margin-top:10px"><button class="btn primary again">Ще раз</button></div></div>';
+      root.querySelector('.again').onclick = () => PG.runExercises(root, specs, Object.assign({}, opts, { forceNew: true }));
+      if (opts.onFinish) opts.onFinish(score);
+    }
+    function stripTags(s) { return String(s).replace(/<[^>]+>/g, '').replace(/\[\[([^\]|]*)(?:\|[^\]]*)?\]\]/g, '$1'); }
+    function answerText(it) { return it.t === 'c' ? (it.o[it.a || 0]) : shown(it.a); }
+
+    function next() {
+      if (run.pos >= run.q.length) return finish();
+      const [i, retry] = run.q[run.pos];
+      render(make(i), retry);
+    }
+    // skip — учень пропустив завдання: воно не повертається в кінець черги, бо відповідь він уже бачив
+    function record(it, ok, skip) {
+      if (!(it._i in run.ft)) run.ft[it._i] = ok;
+      if (skip) run.sk[it._i] = 1;
+      else if (!ok && !run.q[run.pos][1]) run.q.push([it._i, 1]);
+      PG.logActivity('ex');
+      save();
+    }
+
+    function render(it, retry) {
+      PG._exCurrent = it; // для самоперевірки (tools/selftest-console.js)
+      const progress = Math.round((run.pos / run.q.length) * 100);
+      root.innerHTML = '<div class="ex-box card">' +
+        '<div class="row small muted"><span>Завдання ' + (run.pos + 1) + ' з ' + run.q.length + (retry ? ' · повтор' : '') + '</span><span class="spacer"></span>' +
+        (lst ? '<button class="btn small restart" title="Почати підхід заново">↺</button>' : '') + '<span class="pill gray">' + typeName(it.t) + '</span></div>' +
+        '<div class="bar" style="margin:8px 0 12px"><i style="width:' + progress + '%"></i></div>' +
+        '<div class="ex-body"></div><div class="fb"></div>' +
+        '<div class="row" style="margin-top:12px"><button class="btn skip" title="Показати відповідь і перейти далі">Пропустити ⏭</button><span class="spacer"></span><button class="btn primary act">Перевірити</button></div>' +
+        (lst ? '<p class="small muted" style="margin:8px 0 0">Прогрес підходу зберігається автоматично — можна закрити й продовжити пізніше.</p>' : '') + '</div>';
+      const body = root.querySelector('.ex-body');
+      const fb = root.querySelector('.fb');
+      const act = root.querySelector('.act');
+      const skipBtn = root.querySelector('.skip');
+      let checked = false;
+      const goNext = () => { run.pos++; save(); next(); };
+      const showFb = (state, extra) => {
+        const msg = state === 'ok' ? '✅ Правильно!' : state === 'near' ? PG.L.ui.near : state === 'skip' ? '⏭ Пропущено.' : '❌ Ні.';
+        fb.innerHTML = '<div class="feedback ' + (state === 'skip' ? 'near' : state) + '">' + msg +
+          (state !== 'ok' ? ' Правильно: <b>' + esc(answerText(it)) + '</b>' : '') +
+          (it.e ? '<div class="small" style="margin-top:4px">' + PG.rich(it.e) + '</div>' : '') + (extra || '') + '</div>';
+        act.textContent = 'Далі →'; act.style.display = ''; checked = true; skipBtn.style.display = 'none';
+        act.onclick = goNext; act.focus();
+      };
+      const r = root.querySelector('.restart');
+      if (r) r.onclick = () => {
+        if (!r.dataset.sure) { r.dataset.sure = '1'; r.textContent = '↺ Точно почати заново?'; setTimeout(() => { r.dataset.sure = ''; r.textContent = '↺'; }, 3000); return; }
+        run = fresh(); save(); next();
+      };
+      skipBtn.onclick = () => {
+        if (checked) return;
+        if (it.t === 'c') body.querySelectorAll('.opt').forEach((x) => { x.disabled = true; if (x.dataset.v === it.o[it.a || 0]) x.classList.add('ok'); });
+        const inp = body.querySelector('.ans'); if (inp) inp.readOnly = true;
+        record(it, false, true); showFb('skip');
+      };
+
+      if (it.t === 'c') {
+        const correct = it.o[it.a || 0];
+        body.innerHTML = '<div class="ex-q">' + PG.rich(it.q) + '</div><div class="opts">' +
+          PG.shuffle(it.o).map((o) => '<button class="opt" data-v="' + esc(o) + '">' + esc(o) + '</button>').join('') + '</div>';
+        act.style.display = 'none';
+        body.querySelectorAll('.opt').forEach((b) => b.onclick = () => {
+          if (checked) return;
+          const ok = b.dataset.v === correct;
+          body.querySelectorAll('.opt').forEach((x) => { x.disabled = true; if (x.dataset.v === correct) x.classList.add('ok'); });
+          if (!ok) b.classList.add('bad');
+          record(it, ok); showFb(ok ? 'ok' : 'bad');
+        });
+      } else if (it.t === 'i' || it.t === 'l') {
+        body.innerHTML = it.t === 'l'
+          ? '<div class="ex-q">🎧 ' + esc(it.h || 'Прослухайте й напишіть ' + PG.L.names.ins) + (it.q ? ': <span class="muted">' + esc(it.q) + '</span>' : '') + '</div>' +
+            '<div class="row" style="margin-bottom:10px"><button class="btn play">🔊 Ще раз</button><button class="btn slow">🐢 Повільно</button><button class="btn small reveal">Не чути? Показати текст</button></div>'
+          : '<div class="ex-q">' + PG.rich(it.q) + '</div>';
+        // spellcheck вимкнено, бо підкреслення браузера підказувало б, де помилка; autocorrect і lang — щоб телефон
+        // не «виправляв» слова мови навчання на українські. nodia — відповідь цифрами: цифрова клавіатура, без літер
+        body.insertAdjacentHTML('beforeend', '<input type="text" class="ans" lang="' + (it.nodia ? 'uk' : PG.L.htmlLang) + '" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="done"' +
+          (it.nodia ? ' inputmode="decimal"' : '') + ' placeholder="' + esc(it.ph || 'Ваша відповідь') + '">');
+        const inp = body.querySelector('.ans');
+        const kb = it.nodia ? null : PG.letterKeyboard(() => inp);
+        if (kb) body.appendChild(kb);
+        if (it.t === 'l') {
+          const txt = it.say || shown(it.a);
+          body.querySelector('.play').onclick = () => PG.TTS.say(txt);
+          body.querySelector('.slow').onclick = () => PG.TTS.say(txt, 0.6);
+          body.querySelector('.reveal').onclick = (e) => { e.target.outerHTML = '<span class="small muted">Текст: ' + esc(txt) + '</span>'; };
+          setTimeout(() => PG.TTS.say(txt), 250);
+        }
+        // На телефоні автофокус відкриває екранну клавіатуру, і та закриває питання та кнопки 🔊 диктанту
+        if (!PG.touch()) setTimeout(() => inp.focus(), 50);
+        act.onclick = () => {
+          if (checked) return;
+          // check — власна перевірка генерованої вправи; nospace — пробіли не важливі (dvadsaťpäť = dvadsať päť)
+          const nos = (s) => String(s).replace(/\s+/g, '');
+          const list = Array.isArray(it.a) ? it.a : [it.a];
+          const st = it.check ? it.check(inp.value) : it.nospace ? PG.check(nos(inp.value), list.map(nos), it.exact) : PG.check(inp.value, it.a, it.exact);
+          const ok = st === 'ok' || (st === 'near' && !PG.S.settings.strict);
+          inp.classList.add(ok ? 'ok' : 'bad'); inp.readOnly = true;
+          record(it, ok); showFb(st, it.t === 'l' && it.tr ? '<div class="small">Переклад: ' + esc(it.tr) + '</div>' : '');
+        };
+        inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); act.click(); } });
+      } else if (it.t === 'o') {
+        const target = shown(it.a);
+        const pool = target.split(' ');
+        let order = PG.shuffle(pool);
+        for (let k = 0; k < 5 && pool.length > 2 && order.join(' ') === target; k++) order = PG.shuffle(pool);
+        const chosen = [];
+        body.innerHTML = '<div class="ex-q">Складіть речення: <b>' + esc(it.q) + '</b></div>' +
+          '<div class="tokens ans-area" title="Натисніть слово, щоб повернути"></div><div class="tokens pool" style="border-style:solid"></div>';
+        const area = body.querySelector('.ans-area'), poolEl = body.querySelector('.pool');
+        const draw = () => {
+          area.innerHTML = chosen.map((w, k) => '<button class="tok" data-k="' + k + '">' + esc(w) + '</button>').join('') || '<span class="muted small">Натискайте слова внизу…</span>';
+          poolEl.innerHTML = order.map((w, k) => '<button class="tok" data-k="' + k + '">' + esc(w) + '</button>').join('');
+        };
+        draw();
+        area.onclick = (e) => { const b = e.target.closest('.tok'); if (!b || checked) return; order.push(chosen.splice(+b.dataset.k, 1)[0]); draw(); };
+        poolEl.onclick = (e) => { const b = e.target.closest('.tok'); if (!b || checked) return; chosen.push(order.splice(+b.dataset.k, 1)[0]); draw(); };
+        act.onclick = () => {
+          if (checked) return;
+          if (order.length) { PG.toast('Використайте всі слова'); return; }
+          // Порядок слів перевіряється точно: описка тут неможлива, а «майже» означало б неправильний порядок.
+          // Регістр — ні: плитки беруть велику літеру з першої відповіді («Ich»), а мова, що перевіряє регістр (німецька),
+          // інакше не зарахувала б правильний інший порядок («Heute gehe ich»)
+          const lc = (s) => String(s).toLowerCase();
+          const ok = PG.check(lc(chosen.join(' ')), [].concat(it.a).map(lc), true) === 'ok';
+          record(it, ok); showFb(ok ? 'ok' : 'bad', '<div class="row" style="margin-top:6px"><button class="btn small" onclick="PG.TTS.say(' + esc(JSON.stringify(target)) + ')">🔊 Послухати</button></div>');
+        };
+      }
+    }
+    function typeName(t) { return { c: 'вибір', i: 'напишіть', o: 'порядок слів', l: 'диктант' }[t] || t; }
+
+    next();
+  };
+})(window.PG);
+
+</script>
+<script>
+/* Мій словник: додавання, редагування, транскрипція й записи носіїв (якщо пакет мови їх уміє шукати), експорт та імпорт.
+ * Розбір і злиття імпорту — без DOM, тому validate.mjs перевіряє їх у Node. Екрани — у dictview.js */
+window.PG = window.PG || {};
+(function (PG) {
+  'use strict';
+  const FORMAT = 'polyglot-dictionary';
+  const FORMAT_VERSION = 1;
+  const key = (w) => PG.dictKey(w);
+  const cid = (w) => PG.cardId('my', w);
+  const clone = (o) => JSON.parse(JSON.stringify(o));
+  // Ліміт захищає localStorage (~5 МБ на сайт, спільні для всіх мов) від випадково вставленого величезного файлу
+  const MAX_WORDS = 20000;
+  const L = () => PG.L.dict || {};
+
+  const Dict = {
+    FORMAT, MAX_WORDS,
+    list() { return PG.S.dict; },
+    index(word) { const k = key(word); return PG.S.dict.findIndex((w) => key(w.word) === k); },
+    get(word) { return PG.S.dict[this.index(word)] || null; },
+    canLookup() { return typeof L().lookup === 'function'; },
+
+    // Повертає { ok, word } або { ok: false, reason: 'empty' | 'dup' | 'full', word? }
+    add(fields) {
+      const w = PG.cleanWord(Object.assign({}, fields, { added: PG.isoDay(PG.today()) }));
+      if (!w) return { ok: false, reason: 'empty' };
+      const old = this.get(w.word);
+      if (old) return { ok: false, reason: 'dup', word: old };
+      if (PG.S.dict.length >= MAX_WORDS) return { ok: false, reason: 'full' };
+      PG.S.dict.push(w);
+      PG.save();
+      return { ok: true, word: w };
+    },
+    // Нове написання переносить і прогрес повторення: id картки містить саме слово
+    update(oldWord, fields) {
+      const i = this.index(oldWord);
+      if (i < 0) return { ok: false, reason: 'missing' };
+      const cur = PG.S.dict[i];
+      const w = PG.cleanWord(Object.assign({}, cur, fields));
+      if (!w) return { ok: false, reason: 'empty' };
+      const j = this.index(w.word);
+      if (j >= 0 && j !== i) return { ok: false, reason: 'dup', word: PG.S.dict[j] };
+      if (w.word !== cur.word) {
+        if (key(w.word) !== key(cur.word)) { delete w.ipa; delete w.au; }
+        const card = PG.S.cards[cid(cur.word)];
+        delete PG.S.cards[cid(cur.word)];
+        if (card) PG.S.cards[cid(w.word)] = card;
+      }
+      PG.S.dict[i] = w;
+      PG.save();
+      return { ok: true, word: w };
+    },
+    remove(word) {
+      const i = this.index(word);
+      if (i < 0) return false;
+      const w = PG.S.dict.splice(i, 1)[0];
+      delete PG.S.cards[cid(w.word)];
+      PG.save();
+      return true;
+    },
+    clear() {
+      for (const w of PG.S.dict) delete PG.S.cards[cid(w.word)];
+      PG.S.dict = [];
+      PG.save();
+    },
+    card(word) { return PG.S.cards[cid(word)] || null; },
+
+    // undefined — сервіс не відповів; null — слова в базі немає (або мова не вміє шукати)
+    async lookup(word) { return this.canLookup() ? L().lookup(word) : null; },
+    // Слова без транскрипції чи запису (наприклад, після імпорту) доповнюються по черзі: у сервісу ліміт запитів
+    missing() { return this.canLookup() ? PG.S.dict.filter((w) => !w.ipa).map((w) => w.word) : []; },
+    async enrichAll(onStep, stop) {
+      const list = this.missing();
+      let fails = 0, found = 0;
+      for (let i = 0; i < list.length && !(stop && stop()); i++) {
+        const r = await this.enrich(list[i]);
+        if (r === undefined) { if (++fails >= 3) break; } else { fails = 0; if (r) found++; }
+        if (onStep) onStep(i + 1, list.length, found);
+        await new Promise((ok) => setTimeout(ok, 250));
+      }
+      return { found, total: list.length, offline: fails >= 3 };
+    },
+    // Дописує транскрипцію (якщо її немає) і записи носіїв до слова зі словника
+    async enrich(word) {
+      const r = await this.lookup(word);
+      if (!r) return r;
+      const i = this.index(word);
+      if (i < 0) return r;
+      const w = PG.S.dict[i];
+      const next = Object.assign({}, w, { ipa: w.ipa || r.ipa, au: r.au || w.au });
+      PG.S.dict[i] = PG.cleanWord(next) || w;
+      PG.save();
+      return r;
+    },
+    // Запис носія потрібного варіанта, а якщо його немає — будь-який (австралійський теж краще за синтез)
+    nativeUrl(w, variant) {
+      const au = w && w.au;
+      if (!au) return null;
+      return (variant && au[variant]) || au[Object.keys(au)[0]] || null;
+    },
+
+    toJson(withProgress) {
+      const words = PG.S.dict.map((w) => {
+        const out = clone(w);
+        const c = withProgress && this.card(w.word);
+        if (c) out.card = clone(c);
+        return out;
+      });
+      return JSON.stringify({ format: FORMAT, version: FORMAT_VERSION, app: 'Polyglot', lang: PG.code, exported: new Date().toISOString(), count: words.length, words }, null, 1);
+    },
+    toCsv() {
+      const q = (s) => (/[",\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s);
+      const rows = [[L().csvHeader || PG.code, 'ukrainian', 'note', 'example', 'ipa']].concat(PG.S.dict.map((w) => [w.word, w.uk, w.note || '', w.ex || '', w.ipa || '']));
+      return rows.map((r) => r.map(q).join(',')).join('\r\n') + '\r\n';
+    },
+    // Табуляція — роздільник, який Excel і Google Таблиці розпізнають у будь-якій мовній локалі
+    toTsv() {
+      const t = (s) => String(s || '').replace(/[\t\r\n]+/g, ' ');
+      return [PG.cap(PG.L.names.ins) + '\tУкраїнською\tПримітка\tПриклад\tТранскрипція'].concat(PG.S.dict.map((w) => [w.word, w.uk, w.note, w.ex, w.ipa].map(t).join('\t'))).join('\n');
+    },
+    fileName(ext) { return 'polyglot-' + PG.code + '-dictionary-' + PG.isoDay(PG.today()) + '.' + ext; },
+
+    // Розбір імпорту → { kind, lang?, rows: [{word, uk, note?, ex?, ipa?, au?, added?, card?}], bad: [{line, text}] }
+    parse(text, filename) {
+      text = String(text || '').replace(/^﻿/, '');
+      const t = text.trim();
+      if (!t) return { kind: 'empty', rows: [], bad: [] };
+      if (/^[[{]/.test(t)) {
+        try { return Dict.parseJson(JSON.parse(t)); } catch (e) { return { kind: 'json', rows: [], bad: [{ line: 0, text: 'Файл схожий на JSON, але не читається: ' + e.message }] }; }
+      }
+      const ext = String(filename || '').toLowerCase().split('.').pop();
+      const first = t.split(/\r?\n/)[0];
+      if (first.includes('\t') || ext === 'tsv') return Dict.parseTable(t, '\t');
+      if (ext === 'csv') return Dict.parseTable(t, (first.match(/;/g) || []).length > (first.match(/,/g) || []).length ? ';' : ',');
+      return Dict.parseText(t);
+    },
+    // Приймає й словники з інших програм: поле слова — word / term / front / target чи назва мови (headers пакета)
+    parseJson(data) {
+      const list = Array.isArray(data) ? data : data && (Array.isArray(data.words) ? data.words : Array.isArray(data.dict) ? data.dict : null);
+      if (!list) return { kind: 'json', rows: [], bad: [{ line: 0, text: 'У файлі немає списку слів (очікувалося поле words)' }] };
+      const pickKey = (o, names) => { for (const n of Object.keys(o)) if (names.includes(n.toLowerCase())) return o[n]; return undefined; };
+      const rows = [], bad = [], W = wordNames();
+      list.forEach((item, i) => {
+        let w = null;
+        if (Array.isArray(item)) w = { word: item[0], uk: item[1], note: item[2], ex: item[3], ipa: item[4] };
+        else if (item && typeof item === 'object') {
+          w = { word: pickKey(item, W), uk: pickKey(item, UK_NAMES), note: pickKey(item, NOTE_NAMES), ex: pickKey(item, EX_NAMES), ipa: pickKey(item, IPA_NAMES), au: item.au, added: item.added };
+          const card = PG.cleanCard(item.card);
+          if (card) w.card = card;
+        }
+        const c = w && PG.cleanWord(w);
+        if (c) { if (w.card) c.card = w.card; rows.push(c); } else bad.push({ line: i + 1, text: JSON.stringify(item).slice(0, 80) });
+      });
+      const lang = data && !Array.isArray(data) && typeof data.lang === 'string' ? data.lang : null;
+      return { kind: 'json', lang, rows, bad };
+    },
+    // CSV за RFC 4180: лапки, подвоєні лапки й переноси рядків усередині лапок
+    splitCsv(text, d) {
+      const rows = [];
+      let row = [], cell = '', q = false;
+      for (let i = 0; i < text.length; i++) {
+        const ch = text[i];
+        if (q) {
+          if (ch === '"') { if (text[i + 1] === '"') { cell += '"'; i++; } else q = false; } else cell += ch;
+        } else if (ch === '"' && cell === '') q = true;
+        else if (ch === d) { row.push(cell); cell = ''; }
+        else if (ch === '\n' || ch === '\r') { if (ch === '\r' && text[i + 1] === '\n') i++; row.push(cell); rows.push(row); row = []; cell = ''; }
+        else cell += ch;
+      }
+      if (cell !== '' || row.length) { row.push(cell); rows.push(row); }
+      return rows;
+    },
+    parseTable(text, d) {
+      const table = Dict.splitCsv(text, d).filter((r) => r.some((c) => c.trim()));
+      const W = wordNames();
+      let cols = { word: 0, uk: 1, note: 2, ex: 3, ipa: 4 }, start = 0;
+      const head = (table[0] || []).map((c) => c.trim().toLowerCase());
+      if (head.length && (W.includes(head[0]) || head.some((h) => UK_NAMES.includes(h)))) {
+        const find = (names, def) => { const i = head.findIndex((h) => names.includes(h)); return i >= 0 ? i : def; };
+        cols = { word: find(W, 0), uk: find(UK_NAMES, 1), note: find(NOTE_NAMES, -1), ex: find(EX_NAMES, -1), ipa: find(IPA_NAMES, -1) };
+        start = 1;
+      }
+      const rows = [], bad = [];
+      for (let i = start; i < table.length; i++) {
+        const r = table[i], get = (k) => (cols[k] >= 0 ? r[cols[k]] : '');
+        const w = PG.cleanWord({ word: get('word'), uk: get('uk'), note: get('note'), ex: get('ex'), ipa: get('ipa') });
+        if (w) rows.push(w); else bad.push({ line: i + 1, text: r.join(d === '\t' ? ' ⇥ ' : d).slice(0, 80) });
+      }
+      return { kind: d === '\t' ? 'tsv' : 'csv', rows, bad };
+    },
+    // Вільний текст: по слову на рядок, роздільник — перший знайдений з SEPARATORS
+    parseText(text) {
+      const rows = [], bad = [];
+      text.split(/\r?\n/).forEach((raw, i) => {
+        const line = raw.replace(/^\s*(?:\d+[.)]|[-•*–])\s+/, '').trim();
+        if (!line || line.startsWith('#')) return;
+        let w = null;
+        for (const sep of SEPARATORS) {
+          const at = line.indexOf(sep);
+          if (at > 0) { w = PG.cleanWord({ word: line.slice(0, at), uk: line.slice(at + sep.length) }); break; }
+        }
+        if (w) rows.push(w); else bad.push({ line: i + 1, text: line.slice(0, 80) });
+      });
+      return { kind: 'text', rows, bad };
+    },
+
+    // План злиття: що нове, що вже є з тим самим перекладом, що з іншим, що повторюється в самому файлі
+    plan(parsed) {
+      const fresh = [], same = [], conflict = [], seen = new Set();
+      let dup = 0;
+      for (const row of parsed.rows) {
+        const k = key(row.word);
+        if (seen.has(k)) { dup++; continue; }
+        seen.add(k);
+        const cur = this.get(row.word);
+        if (!cur) fresh.push(row);
+        else if (PG.norm(cur.uk) === PG.norm(row.uk)) same.push({ row, cur });
+        else conflict.push({ row, cur });
+      }
+      return { fresh, same, conflict, dup, bad: parsed.bad, kind: parsed.kind, lang: parsed.lang || null, withCards: parsed.rows.some((r) => r.card) };
+    },
+    // conflict: 'keep' | 'replace' | 'merge'; progress — брати прогрес повторення з файлу. Повертає підсумок і знімок для скасування
+    apply(plan, opts) {
+      opts = Object.assign({ conflict: 'keep', progress: true }, opts);
+      const snapshot = { dict: clone(PG.S.dict), cards: {} };
+      for (const k of Object.keys(PG.S.cards)) if (k.startsWith('my|')) snapshot.cards[k] = clone(PG.S.cards[k]);
+      let added = 0, updated = 0, filled = 0;
+      const room = Math.max(0, MAX_WORDS - PG.S.dict.length);
+      const takeCard = (row, word) => {
+        if (!opts.progress || !row.card) return;
+        const old = PG.S.cards[cid(word)];
+        if (!old || (!old.reps && row.card.reps)) PG.S.cards[cid(word)] = clone(row.card);
+      };
+      // Порожні поля мого слова заповнюються з файлу; заповнені — не чіпаємо
+      const fill = (cur, row) => {
+        let n = 0;
+        for (const f of ['note', 'ex', 'ipa']) if (!cur[f] && row[f]) { cur[f] = row[f]; n++; }
+        if (!cur.au && row.au) { cur.au = row.au; n++; }
+        return n;
+      };
+      for (const row of plan.fresh.slice(0, room)) {
+        const w = Object.assign({}, row);
+        delete w.card;
+        if (!w.added) w.added = PG.isoDay(PG.today());
+        PG.S.dict.push(w);
+        takeCard(row, w.word);
+        added++;
+      }
+      for (const { row } of plan.same) {
+        const cur = this.get(row.word);
+        if (fill(cur, row)) filled++;
+        takeCard(row, cur.word);
+      }
+      for (const { row } of plan.conflict) {
+        const cur = this.get(row.word);
+        if (opts.conflict === 'replace') { cur.uk = row.uk; updated++; } else if (opts.conflict === 'merge') {
+          const parts = cur.uk.split(/\s*;\s*/);
+          if (!parts.some((p) => PG.norm(p) === PG.norm(row.uk))) { cur.uk = (cur.uk + '; ' + row.uk).slice(0, 300); updated++; }
+        }
+        if (fill(cur, row)) filled++;
+        takeCard(row, cur.word);
+      }
+      PG.save();
+      return { added, updated, filled, skipped: plan.fresh.length - Math.min(plan.fresh.length, room), snapshot };
+    },
+    undo(snapshot) {
+      for (const k of Object.keys(PG.S.cards)) if (k.startsWith('my|')) delete PG.S.cards[k];
+      Object.assign(PG.S.cards, snapshot.cards);
+      PG.S.dict = snapshot.dict;
+      PG.save();
+    },
+
+    // Тренування: диктант (почути й написати), переклад українська → мова навчання, вибір перекладу
+    practiceSpecs(n) {
+      const all = PG.S.dict;
+      if (!all.length) return [];
+      const t = PG.today(), ins = PG.L.names.ins;
+      // Спершу слова, які пора повторити, і нові: їх тренувати найкорисніше
+      const rank = (w) => { const c = this.card(w.word); return !c ? 1 : c.due <= t ? 0 : 2; };
+      const pool = PG.shuffle(all).sort((a, b) => rank(a) - rank(b)).slice(0, n || 10);
+      return pool.map((w) => {
+        const answers = Dict.answers(w.word);
+        const types = ['i'];
+        if (!/\s\/\s/.test(w.word)) types.push('l');
+        const others = PG.shuffle(all.filter((x) => PG.norm(x.uk) !== PG.norm(w.uk))).map((x) => x.uk).filter((u, i, a) => a.indexOf(u) === i).slice(0, 2);
+        if (others.length === 2) types.push('c');
+        const type = types[Math.floor(Math.random() * types.length)];
+        const note = w.note ? ' <span class="small muted">(' + PG.esc(w.note) + ')</span>' : '';
+        const e = PG.sayHtml(w.word, PG.sayText(w.word)) + (w.ipa ? ' <span class="ipa">' + PG.esc(w.ipa) + '</span>' : '') + ' — ' + PG.esc(w.uk);
+        // nv: слова учня показуються так, як він їх записав, без заміни правопису під варіант мови
+        if (type === 'c') return { t: 'c', q: 'Що означає ' + PG.sayHtml(w.word, PG.sayText(w.word)) + '?', o: [w.uk].concat(others), e, nv: true };
+        if (type === 'l') return { t: 'l', a: answers, say: PG.sayText(w.word), tr: w.uk, h: 'Прослухайте й напишіть ' + ins, nv: true };
+        return { t: 'i', q: 'Як ' + ins + ': <b>' + PG.esc(w.uk) + '</b>?' + note, a: answers, e, nv: true };
+      });
+    },
+    // Прийнятні відповіді для слова: варіанти через « / », без приміток у дужках, плюс форми від пакета («book» для «to book»)
+    answers(word) {
+      const out = new Set(), forms = L().answerForms;
+      for (const part of String(word).split(/\s\/\s/)) {
+        const p = part.trim(), plain = p.replace(/\s*\([^)]*\)/g, '').trim();
+        [p, plain].forEach((x) => { if (!x) return; out.add(x); if (forms) forms(x).forEach((f) => out.add(f)); });
+      }
+      out.add(word);
+      return Array.from(out);
+    }
+  };
+  // Колонка зі словом мови впізнається і за спільними назвами, і за назвами мови з пакета (english, slovak, словацькою…)
+  const wordNames = () => ['word', 'term', 'front', 'target', 'слово'].concat(L().headers || []);
+  const UK_NAMES = ['ukrainian', 'uk', 'ua', 'translation', 'back', 'definition', 'meaning', 'переклад', 'українською', 'українська', 'укр'];
+  const NOTE_NAMES = ['note', 'notes', 'comment', 'примітка', 'примітки', 'коментар'];
+  const EX_NAMES = ['example', 'examples', 'sentence', 'context', 'ex', 'приклад', 'речення'];
+  const IPA_NAMES = ['ipa', 'transcription', 'pronunciation', 'phonetic', 'транскрипція', 'вимова'];
+  // Порядок важливий: « — » і « - » раніше за «;» і «,», бо переклад часто містить коми («квартира, житло»)
+  const SEPARATORS = [' — ', ' – ', ' - ', '\t', ' ; ', ';', ' = ', '=', ' : ', ','];
+
+  // Завантаження файлу, «Поділитися» і буфер обміну потребують браузера; у Node (validate.mjs) їх не викликають
+  Dict.download = function (name, text, mime) {
+    const blob = new Blob([text], { type: mime });
+    const url = URL.createObjectURL(blob), a = document.createElement('a');
+    a.href = url; a.download = name; a.rel = 'noopener';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+  };
+  Dict.canShareFiles = function () {
+    try { return !!(navigator.canShare && navigator.canShare({ files: [new File(['{}'], 'x.json', { type: 'application/json' })] })); } catch (e) { return false; }
+  };
+  Dict.share = function (name, text, mime) {
+    return navigator.share({ files: [new File([text], name, { type: mime })], title: 'Polyglot — мій словник (' + PG.L.names.nom + ')' });
+  };
+  Dict.copy = async function (text) {
+    try { await navigator.clipboard.writeText(text); return true; } catch (e) {
+      const ta = document.createElement('textarea');
+      ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select();
+      let ok = false;
+      try { ok = document.execCommand('copy'); } catch (e2) { ok = false; }
+      ta.remove();
+      return ok;
+    }
+  };
+
+  PG.Dict = Dict;
+})(window.PG);
+
+</script>
+<script>
+/* Екрани «Мови», «Сьогодні», «Програма», «Уроки», «Урок» */
+(function (PG) {
+  'use strict';
+  const esc = PG.esc, $ = (s, r) => (r || document).querySelector(s), $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
+  const view = () => document.getElementById('view');
+  const P = () => PG.program;
+  const N = () => PG.L.names;
+
+  // [id, іконка, підпис, короткий підпис, лише на широкому екрані]. «Програма» на телефоні — посилання з «Уроків»:
+  // восьма вкладка в нижній навігації не вміщується
+  const NAV = [['today', '🏠', 'Сьогодні', 'Сьогодні'], ['program', '🗺️', 'Програма', 'План', true], ['lessons', '📘', 'Уроки', 'Уроки'], ['words', '🃏', 'Слова', 'Слова'],
+    ['dict', '📒', 'Словник', 'Словник'], ['speak', '🎙️', 'Розмова', 'Мова'], ['ref', '📚', 'Довідник', 'Довідка'], ['settings', '⚙️', 'Налаштування', 'Опції']];
+
+  // Той самий прапор на сторінці кілька разів (шапка, вибір мови, вибір варіанта): id у clipPath мають бути різними,
+  // інакше браузер обріже копію за чужим контуром
+  let flagN = 0;
+  PG.flagSvg = function (code, variant) {
+    const info = PG.langInfo(code);
+    if (!info) return '';
+    const f = info.flags, svg = (variant && f[variant]) || f[Object.keys(f)[0]];
+    const n = ++flagN;
+    return svg.replace(/id="([^"]+)"/g, 'id="$1-' + n + '"').replace(/url\(#([^)]+)\)/g, 'url(#$1-' + n + ')');
+  };
+  PG.flagHtml = (code, variant, cls) => '<span class="' + (cls || 'flag-ic') + '">' + PG.flagSvg(code, variant) + '</span>';
+
+  function stageOf(id) { return P().stages.find((s) => s.id === id) || { level: '', title: '' }; }
+  // Модуль програми може мати поле lesson: 'a2-1' — тоді він виконаний, коли пройдено урок
+  const modLesson = (m) => (m.lesson && PG.lessonById(m.lesson)) || null;
+  const modDone = (m) => (modLesson(m) ? PG.lessonClosed(m.lesson) : !!PG.S.modules[m.id]);
+  function overall() {
+    let done = 0, total = 0;
+    P().stages.forEach((s) => {
+      if (s.built) PG.lessons.filter((l) => l.stage === s.id).forEach((l) => { total++; if (PG.lessonClosed(l.id)) done++; });
+      else (s.modules || []).forEach((m) => { total++; if (modDone(m)) done++; });
+    });
+    return { done, total, pct: total ? Math.round((done / total) * 100) : 0 };
+  }
+  // Що прогрес не зберігається чи озвучення не працює, учень має побачити на будь-якому екрані, а не лише в налаштуваннях
+  function voiceBanner() {
+    let h = '';
+    if (PG.store.newer) h += '<div class="warn-banner">⚠️ Ваш прогрес збережено новішою версією тренажера. Оновіть сторінку з інтернетом — доти зміни не зберігаються.</div>';
+    else if (PG.store.broken) h += '<div class="warn-banner">⚠️ Не вдалося прочитати збережений прогрес. Подробиці — у ⚙️ «Налаштування».</div>';
+    if (PG.TTS.silent()) h += '<div class="warn-banner voice-banner">🔇 Немає інтернету, а ' + N().adjGen + ' голосу в цій системі немає, тому озвучення не працюватиме. Як додати голос, що працює без інтернету, — див. ⚙️ «Налаштування».</div>';
+    return h;
+  }
+
+  // Вибір мови. Підсумки — зі збережених записів кожної мови, тож пакети інших мов тут не завантажуються
+  function renderLanguages() {
+    const cur = PG.code;
+    const ago = (d) => { const n = PG.today() - d; return n <= 0 ? 'сьогодні' : n === 1 ? 'учора' : n + ' дн. тому'; };
+    view().innerHTML = '<div class="card"><div class="row"><span class="app-logo">' + (PG.LOGO || '') + '</span><div><h1 style="margin:0">' + (cur ? '🌍 Мови' : 'Вітаємо в Polyglot! 👋') + '</h1>' +
+      '<div class="muted">' + (cur ? 'Прогрес кожної мови зберігається окремо: перемикайтеся будь-коли, нічого не загубиться.' : 'Яку мову вчимо? Виберіть — змінити можна будь-коли, а прогрес кожної мови зберігається окремо.') + '</div></div></div></div>' +
+      '<div class="grid g2">' + (PG.LANGS || []).map((l) => {
+        const s = PG.langSummary(l.code);
+        return '<div class="card lang-card' + (l.code === cur ? ' current' : '') + '"><div class="row"><span class="flag-big">' + PG.flagSvg(l.code, l.code === cur ? PG.variant() : null) + '</span>' +
+          '<div><h2 style="margin:0">' + esc(l.name) + '</h2><div class="small muted">' + esc(l.native) + ' · ' + esc(l.levels) + '</div></div><span class="spacer"></span>' +
+          (l.draft ? '<span class="pill amber">чернетка</span>' : '') + (l.code === cur ? '<span class="pill green">зараз</span>' : '') + '</div>' +
+          '<p class="small">' + esc(l.about) + '</p>' +
+          (s ? '<div class="row small"><span class="pill">пройдено уроків: ' + s.done + '</span>' + (s.skipped ? '<span class="pill gray">пропущено: ' + s.skipped + '</span>' : '') +
+            '<span class="pill green">слів у пам\'яті: ' + s.words + '</span>' + (s.dict ? '<span class="pill gray">📒 ' + s.dict + '</span>' : '') +
+            (s.streak ? '<span class="pill amber">🔥 ' + s.streak + '</span>' : '') + (s.last != null ? '<span class="small muted">останнє заняття: ' + ago(s.last) + '</span>' : '') + '</div>'
+            : '<p class="small muted">Ще не почато.</p>') +
+          '<div class="row" style="margin-top:10px">' + (l.code === cur ? '<a class="btn primary" href="#/today">Продовжити →</a>'
+            : '<button class="btn primary" data-switch-lang="' + esc(l.code) + '">' + (s ? 'Продовжити →' : 'Почати →') + '</button>') + '</div></div>';
+      }).join('') + '</div>' +
+      '<p class="small muted center">Нові мови додаються окремими мовними пакетами — інтерфейс, прогрес і налаштування для них ті самі.</p>';
+    // Пошук лише всередині екрана: <html data-lang> теж має атрибут мови, і обробник на ньому спрацьовував би на будь-який клік
+    $$('[data-switch-lang]', view()).forEach((b) => b.onclick = () => { b.disabled = true; b.textContent = 'Завантаження…'; PG.switchLang(b.dataset.switchLang); });
+  }
+
+  function renderToday() {
+    const t = PG.today(), wd = PG.dayOfWeek(t), P0 = P();
+    const cur = PG.currentLesson();
+    const counts = PG.srsCounts();
+    const q = PG.srsQueue();
+    const o = overall();
+    const isA0 = cur && cur.stage === 'a0';
+    const plan = P0.week.find((w) => w.d === wd);
+    const date = new Date().toLocaleDateString('uk-UA', { weekday: 'long', day: 'numeric', month: 'long' });
+    const dictN = PG.S.dict.length;
+    const v = PG.variant(), vi = PG.variantInfo(v), U = PG.L.ui;
+    // Поки учень не вибрав варіант мови, питання стоїть першим: від нього залежать правопис, слова й голос
+    const pick = !vi || PG.S.ui.variantAsked ? '' : '<div class="card variant-card"><h2 style="margin-top:0">' + esc(U.variantQuestion) + '</h2><p>' + U.variantIntro + '</p>' + PG.variantPicker(true) + '</div>';
+    const learning = PG.flagHtml(PG.code, v) + ' <b>' + (vi && PG.S.ui.variantAsked ? vi.acc + ' ' : '') + N().acc + '</b>';
+    view().innerHTML = voiceBanner() + '<div id="install-tip"></div>' + pick +
+      '<div class="card"><div class="row"><div><h1>' + esc(U.hello) + '</h1><div class="muted">' + esc(date) + '</div>' +
+      '<div class="small" style="margin-top:4px">Ви вчите ' + learning + ' · <a href="#/languages">змінити мову</a>' + (vi && PG.S.ui.variantAsked ? ' · <a href="#/settings">варіант</a>' : '') + '</div></div><span class="spacer"></span>' +
+      '<div class="center"><div class="stat">🔥 ' + PG.streak() + '</div><div class="small muted">днів поспіль<br>(вихідні не рахуються)</div></div></div></div>' +
+      '<div class="grid g2">' +
+      '<div class="card"><h3>📌 План на сьогодні</h3>' +
+      (plan ? '<p><b>' + plan.name + ':</b> ' + esc(isA0 ? P0.weekA0 : plan.full) + '</p><p class="small muted">Якщо є лише 15 хв: ' + esc(isA0 ? 'половина уроку' : plan.min) + '.</p>'
+        : '<p>' + esc(U.weekend) + '</p>') +
+      '<p class="small">' + esc(P0.daily) + '</p>' +
+      '<div class="row"><a class="btn primary" href="#/lesson/' + cur.id + '">📘 Урок ' + esc(cur.num) + '</a>' +
+      '<a class="btn" href="#/words">🃏 Слова (' + q.total + ')</a><a class="btn" href="#/speak">🎙️ Розмова</a>' + (PG.L.drills ? '<a class="btn" href="#/drill">🔢 Числа</a>' : '') + '</div></div>' +
+      '<div class="card"><h3>⏱️ Таймер заняття</h3><div class="row"><span class="timer" id="tmr">15:00</span><span class="spacer"></span>' +
+      '<button class="btn small" data-min="15">15 хв</button><button class="btn small" data-min="30">30 хв</button><button class="btn small" id="tmr-stop">Стоп</button></div>' +
+      '<p class="small muted">Коротко, але щодня — це краще, ніж довго раз на тиждень.</p></div></div>' +
+      '<div class="card"><h3>Поточний урок: ' + esc(cur.num + ' · ' + PG.v(cur.title)) + '</h3>' + lessonChecks(cur) + '</div>' +
+      '<div class="card"><div class="row"><h3 style="margin:0">📒 Мій словник</h3><span class="spacer"></span><a class="btn small" href="#/dict">' + (dictN ? 'Відкрити (' + dictN + ')' : '＋ Додати перше слово') + '</a></div>' +
+      '<p class="small muted" style="margin:6px 0 0">' + esc(U.dictPromo) + '</p></div>' +
+      '<div class="grid g3">' +
+      '<div class="card center"><div class="stat">' + o.pct + '%</div><div class="small muted">програми до B2 (' + o.done + ' з ' + o.total + ' ' + (P0.stages.every((s) => s.built) ? 'уроків' : 'кроків') + ')</div><div class="bar" style="margin-top:8px"><i style="width:' + o.pct + '%"></i></div></div>' +
+      '<div class="card center"><div class="stat">' + counts.known + '</div><div class="small muted">слів у повторенні</div></div>' +
+      '<div class="card center"><div class="stat">' + counts.due + '</div><div class="small muted">слів на повторення сьогодні</div></div></div>';
+    timerInit();
+    if (pick) PG.bindVariantPicker(view(), renderToday);
+    if (PG.fillInstallTip) PG.fillInstallTip();
+  }
+  let tmrInt = null;
+  function timerInit() {
+    const el = $('#tmr'); if (!el) return;
+    $$('[data-min]').forEach((b) => b.onclick = () => {
+      clearInterval(tmrInt);
+      // Рахуємо від часу старту: на телефоні з вимкненим екраном тики setInterval зупиняються
+      const end = Date.now() + b.dataset.min * 60000;
+      const draw = () => {
+        const left = Math.max(0, Math.ceil((end - Date.now()) / 1000));
+        el.textContent = String(Math.floor(left / 60)).padStart(2, '0') + ':' + String(left % 60).padStart(2, '0');
+        return left;
+      };
+      draw();
+      tmrInt = setInterval(() => { if (draw() <= 0) { clearInterval(tmrInt); PG.toast('⏰ Час вийшов! ' + PG.L.ui.praise + ' — чудова робота!'); PG.TTS.say(PG.L.ui.praise); } }, 250);
+    });
+    $('#tmr-stop').onclick = () => { clearInterval(tmrInt); el.textContent = '15:00'; };
+  }
+  function lessonChecks(l) {
+    const s = PG.S.lessons[l.id] || {};
+    const mk = (ok, txt) => '<span class="pill ' + (ok ? 'green' : 'gray') + '">' + (ok ? '✓ ' : '○ ') + txt + '</span>';
+    const run = s.run && s.run.ft ? ' <span class="pill amber">⏸ вправи: ' + Object.keys(s.run.ft).length + ' з ' + (+s.run.n || 0) + '</span>' : '';
+    return '<div class="row lesson-checks">' + (PG.lessonSkipped(l.id) ? '<span class="pill amber">⏭ пропущено</span>' : '') + mk(s.theory, 'Теорія') +
+      mk(s.ex && s.ex.done, 'Вправи ≥ 80%' + (s.ex && s.ex.best != null ? ' (' + s.ex.best + '%)' : '')) + run +
+      mk(s.speak, 'Розмова') + mk(s.mission, 'Місія') + '</div>';
+  }
+  function lessonBadge(l) {
+    const st = PG.S.lessons[l.id] || {};
+    if (PG.lessonDone(l.id)) return '<span class="pill green">✓ пройдено</span>';
+    if (PG.lessonSkipped(l.id)) return '<span class="pill gray">⏭ пропущено</span>';
+    if (st.run && st.run.ft) return '<span class="pill amber">⏸ ' + Object.keys(st.run.ft).length + '/' + (+st.run.n || 0) + '</span>';
+    return st.opened ? '<span class="pill amber">у процесі</span>' : '';
+  }
+  const lessonLink = (l) => '<a class="lesson-item" href="#/lesson/' + l.id + '"><span class="num">' + esc(l.num) + '</span><span>' + esc(PG.v(l.title)) + '<br><span class="small muted">' + esc(l.dur) + ' · ' + esc(PG.v(l.goals.join('; '))) + '</span></span><span class="spacer"></span>' + lessonBadge(l) + '</a>';
+
+  function renderProgram() {
+    const h = [], P0 = P();
+    h.push('<div class="card"><h1>🗺️ Програма: від нуля до B2</h1><p>' + esc(P0.intro) + '</p><p class="muted">' + esc(P0.estimate) + '</p>' +
+      '<button class="btn small no-print" onclick="window.print()">🖨️ Надрукувати / зберегти як PDF</button></div>');
+    h.push('<div class="card"><h2>Принципи</h2><div class="grid g2">' + P0.principles.map((p) => '<div><b>' + esc(p[0]) + '.</b> ' + esc(p[1]) + '</div>').join('') + '</div></div>');
+    const wd = PG.dayOfWeek(PG.today());
+    h.push('<div class="card"><h2>Тижневий ритм (15–30 хв)</h2><p class="small">' + esc(P0.daily) + '</p><div class="tblwrap"><table class="week-plan"><tr><th>День</th><th>Повний варіант (30 хв)</th><th>Мінімум (15 хв)</th></tr>' +
+      P0.week.map((w) => '<tr' + (w.d === wd ? ' class="today-row"' : '') + '><td>' + w.name + '</td><td>' + esc(w.full) + '</td><td>' + esc(w.min) + '</td></tr>').join('') +
+      '<tr><td>Сб–Нд</td><td colspan="2">' + esc(PG.L.ui.weekendRow) + '</td></tr></table></div><p class="small muted">' + esc(P0.weekA0) + (P0.weekLong ? ' ' + esc(P0.weekLong) : '') + '</p></div>');
+    P0.stages.forEach((s, i) => {
+      const items = s.built ? PG.lessons.filter((l) => l.stage === s.id) : (s.modules || []);
+      const done = s.built ? items.filter((l) => PG.lessonClosed(l.id)).length : items.filter(modDone).length;
+      const anyBuilt = !s.built && items.some(modLesson);
+      h.push('<details class="stage card"' + (i < 2 || done < items.length && done > 0 ? ' open' : '') + '><summary><div class="row"><span class="pill">' + esc(s.level) + '</span><h2 style="margin:0">' + esc(s.title) + '</h2><span class="spacer"></span><span class="small muted">тижні ' + esc(s.weeks) + ' · ' + done + '/' + items.length + '</span></div></summary>' +
+        '<p><b>Після етапу я вмію:</b></p><ul class="check">' + s.cando.map((c) => '<li>' + esc(c) + '</li>').join('') + '</ul>' +
+        (s.checkpoint ? '<p class="tip"><b>Контрольна точка:</b> ' + esc(s.checkpoint) + '</p>' : '') +
+        (s.built ? (items.length ? items.map(lessonLink).join('') : '<p class="small muted">Уроки етапу ще не додано.</p>')
+          : (anyBuilt ? '' : '<p class="small note">Інтерактивні уроки для цих модулів з\'являться в наступних версіях тренажера. Поки що працюйте за планом нижче і позначайте виконані модулі.</p>') +
+            items.map((m) => '<details class="mod"><summary>' + (modDone(m) ? '<span class="done-mark">✓</span> ' : '') + esc(m.title) + ' <span class="small muted">· тижні ' + esc(m.weeks) + '</span>' + (modLesson(m) ? ' <span class="pill green">є урок</span>' : '') + '</summary><div class="kv">' +
+              [['Граматика', m.grammar], ['Лексика', m.vocab], ['Розмова', m.speak], ['Слухання', m.listen], ['Читання', m.read], ['Письмо', m.write], ['Місія', m.mission]].map((r) => '<b>' + r[0] + '</b><span>' + esc(r[1]) + '</span>').join('') +
+              '</div>' + (modLesson(m) ? '<div class="row" style="margin-top:8px"><a class="btn primary small" href="#/lesson/' + m.lesson + '">📘 Відкрити урок ' + esc(modLesson(m).num) + '</a></div>'
+                : '<label class="row" style="margin-top:8px"><input type="checkbox" data-mod="' + esc(m.id) + '"' + (PG.S.modules[m.id] ? ' checked' : '') + '> Модуль виконано</label>') + '</details>').join('')) +
+        '</details>');
+    });
+    // Картки «Іспити», «Мова і ВНЖ» тощо — з пакета мови. html: true — значення таблиці вже є розміткою
+    (PG.L.infoCards ? PG.L.infoCards() : []).forEach((c) => {
+      h.push('<div class="card"><h2>' + esc(c.title) + '</h2>' + (c.text ? '<p>' + esc(c.text) + '</p>' : '') +
+        (c.items ? '<div class="tblwrap"><table>' + c.items.map((r) => '<tr><td><b>' + esc(r[0]) + '</b></td><td>' + (c.html ? r[1] : esc(r[1])) + '</td></tr>').join('') + '</table></div>' : '') +
+        '<p class="small muted">' + (c.note ? esc(c.note) + ' ' : '') + (c.checked ? 'Перевірено: ' + esc(c.checked) + '. ' : '') + (c.links || []).map((l) => '<a href="' + esc(l[1]) + '" target="_blank" rel="noopener">' + esc(l[0]) + '</a>').join(' · ') + '</p></div>');
+    });
+    h.push('<div class="card"><h2>🔗 Ресурси</h2>' + PG.resources.map((g) => '<h3>' + esc(g.cat) + '</h3><ul>' + g.items.map((r) => '<li><a href="' + esc(r[1]) + '" target="_blank" rel="noopener"><b>' + esc(r[0]) + '</b></a> <span class="pill gray">' + esc(r[3]) + '</span> — ' + esc(r[2]) + '</li>').join('') + '</ul>').join('') + '</div>');
+    view().innerHTML = h.join('');
+    $$('[data-mod]').forEach((c) => c.onchange = () => { PG.S.modules[c.dataset.mod] = c.checked; PG.save(); PG.toast(c.checked ? 'Модуль позначено ✓' : 'Позначку знято'); });
+  }
+
+  function renderLessons() {
+    const P0 = P(), U = PG.L.ui;
+    const groups = P0.stages.filter((s) => PG.lessons.some((l) => l.stage === s.id));
+    const later = P0.stages.filter((s) => !s.built && !PG.lessons.some((l) => l.stage === s.id));
+    view().innerHTML = '<div class="card"><h1>📘 Уроки</h1><p class="muted">Кожен урок складається з теорії з озвученням, слів, вправ, розмовної практики й місії в реальному житті. Урок зараховано, коли вправи виконано на ≥ 80%.</p>' +
+      '<p class="small">Будь-який урок можна відкрити в будь-який момент. Усередині уроку є кнопки <b>«Пропустити урок»</b> (якщо тему вже знаєте), <b>«Почати з цього уроку»</b> (попередні позначаться як пропущені) і <b>«Пройти наново»</b>. Почати все з нуля можна в ⚙️ «Налаштуваннях».</p>' +
+      '<div class="row"><a class="btn small" href="#/program">🗺️ Програма, іспити й ресурси</a><a class="btn small" href="#/languages">🌍 Інша мова</a></div></div>' +
+      groups.map((s) => '<div class="card"><h2>' + esc(s.level + ' · ' + s.title) + '</h2>' + PG.lessons.filter((l) => l.stage === s.id).map((l) => {
+        const st = PG.S.lessons[l.id] || {};
+        const best = st.ex && st.ex.best != null ? st.ex.best + '%' : '—';
+        return '<a class="lesson-item" href="#/lesson/' + l.id + '"><span class="num">' + esc(l.num) + '</span><span>' + esc(PG.v(l.title)) + '<br><span class="small muted">' + esc(l.dur) + ' · найкращий результат: ' + best + '</span></span><span class="spacer"></span>' +
+          lessonBadge(l) + '</a>';
+      }).join('') + '</div>').join('') +
+      (PG.L.drills ? '<a class="card lesson-item" href="#/drill" style="text-decoration:none"><span class="num">🔢</span><span><b>' + esc(U.drillCard[0]) + '</b><br><span class="small muted">' + esc(U.drillCard[1]) + '</span></span></a>' : '') +
+      '<a class="card lesson-item" href="#/dict/practice" style="text-decoration:none"><span class="num">📒</span><span><b>Тренування мого словника</b><br><span class="small muted">диктант і переклад зі слів, які ви додали самі</span></span></a>' +
+      (later.length ? '<div class="card"><h3>Далі: ' + later.map((s) => esc(s.level)).join(' → ') + '</h3><p>План наступних рівнів — у вкладці <a href="#/program">«Програма»</a>. Уроки для них з\'являться в наступних версіях тренажера.</p></div>' : '');
+  }
+
+  function lessonControls(l, idx) {
+    const done = PG.lessonDone(l.id), skipped = PG.lessonSkipped(l.id);
+    const st = PG.S.lessons[l.id] || {};
+    const hasProgress = st.theory || st.ex || st.speak || st.mission || st.run || st.skipped;
+    const earlierOpen = PG.lessons.slice(0, idx).some((x) => !PG.lessonClosed(x.id));
+    return '<div class="row small" style="margin-top:8px">' +
+      (!done && !skipped ? '<button class="btn small" id="lc-skip" title="Тему вже знаю — перейти до наступного уроку">⏭ Пропустити урок</button>' : '') +
+      (skipped ? '<button class="btn small" id="lc-unskip">↩ Повернути урок</button>' : '') +
+      (earlierOpen ? '<button class="btn small" id="lc-from" title="Усі попередні незавершені уроки позначаться як пропущені">▶ Почати з цього уроку</button>' : '') +
+      (hasProgress ? '<button class="btn small" id="lc-reset" title="Скинути позначки й вправи цього уроку (слова лишаються)">↺ Пройти урок наново</button>' : '') +
+      '</div>';
+  }
+  // Друге натискання підтверджує: незворотні дії не мають спрацьовувати від випадкового дотику
+  function confirmClick(btn, label, action) {
+    if (!btn) return;
+    const orig = btn.textContent;
+    btn.onclick = () => {
+      if (!btn.dataset.sure) { btn.dataset.sure = '1'; btn.textContent = label; setTimeout(() => { btn.dataset.sure = ''; btn.textContent = orig; }, 3500); return; }
+      action();
+    };
+  }
+  PG.confirmClick = confirmClick;
+  function bindLessonControls(l, tab, next) {
+    const reload = () => renderLesson(l.id, tab);
+    const sk = $('#lc-skip');
+    if (sk) sk.onclick = () => { PG.skipLesson(l.id, true); PG.toast('Урок ' + l.num + ' пропущено'); location.hash = next ? '#/lesson/' + next.id : '#/lessons'; };
+    const un = $('#lc-unskip');
+    if (un) un.onclick = () => { PG.skipLesson(l.id, false); PG.toast('Урок повернуто в план'); reload(); };
+    confirmClick($('#lc-from'), '▶ Так, попередні — пропустити', () => { PG.startFrom(l.id); PG.toast('Тепер навчання починається з уроку ' + l.num); reload(); });
+    confirmClick($('#lc-reset'), '↺ Точно скинути прогрес уроку?', () => { PG.resetLesson(l.id); PG.toast('Прогрес уроку скинуто. Слова лишаються в повторенні.'); reload(); });
+  }
+
+  function renderLesson(id, tab) {
+    const l = PG.lessonById(id);
+    if (!l) { location.hash = '#/lessons'; return; }
+    const st = PG.lessonState(id);
+    if (!st.opened) { st.opened = true; PG.save(); }
+    tab = tab || 'theory';
+    const idx = PG.lessons.indexOf(l);
+    const prev = PG.lessons[idx - 1], next = PG.lessons[idx + 1];
+    const tabs = [['theory', 'Теорія'], ['words', 'Слова (' + l.vocab.length + ')'], ['ex', 'Вправи (' + l.ex.length + ')'], ['speak', 'Розмова'], ['mission', 'Місія']];
+    // На телефоні повна шапка уроку займала б увесь перший екран, і вправа опинялася б під екранною клавіатурою
+    const narrow = window.matchMedia && matchMedia('(max-width:700px)').matches;
+    view().innerHTML = voiceBanner() + '<div class="card lesson-head tab-' + tab + '"><div class="row small muted"><a href="#/lessons">← Уроки</a><span class="spacer"></span>' + esc(stageOf(l.stage).level) + ' · ' + esc(l.dur) + '</div>' +
+      '<h1>' + esc(l.num + ' · ' + PG.v(l.title)) + '</h1><p class="small lesson-goals"><b>Мета:</b> ' + esc(PG.v(l.goals.join(' · '))) + '</p>' + lessonChecks(l) +
+      (narrow ? '<details class="lc-more"><summary class="small muted">⋯ Керування уроком</summary>' + lessonControls(l, idx) + '</details>' : lessonControls(l, idx)) +
+      '<div class="subtabs">' + tabs.map((t) => '<button data-tab="' + t[0] + '" class="' + (t[0] === tab ? 'active' : '') + '">' + t[1] + '</button>').join('') + '</div></div>' +
+      '<div id="lesson-body"></div>' +
+      '<div class="row" style="margin-top:6px">' + (prev ? '<a class="btn" href="#/lesson/' + prev.id + '">← ' + esc(prev.num) + '</a>' : '') + '<span class="spacer"></span>' + (next ? '<a class="btn" href="#/lesson/' + next.id + '">' + esc(next.num) + ' →</a>' : '') + '</div>';
+    $$('.subtabs button').forEach((b) => b.onclick = () => { location.hash = '#/lesson/' + id + '/' + b.dataset.tab; });
+    bindLessonControls(l, tab, next);
+    const body = $('#lesson-body');
+    if (tab === 'theory') {
+      body.innerHTML = '<div class="card theory">' + PG.rich(PG.v(l.theory)) + '<div class="row" style="margin-top:12px"><span class="spacer"></span><button class="btn primary" id="th-done">' + (st.theory ? '✓ Прочитано' : 'Прочитав(ла) → до слів') + '</button></div></div>';
+      $('#th-done').onclick = () => { st.theory = true; PG.save(); location.hash = '#/lesson/' + id + '/words'; };
+    } else if (tab === 'words') {
+      const otherTag = (PG.variantInfo(PG.otherVariant()) || {}).tag || '';
+      body.innerHTML = '<div class="card">' + (l.vocab.length ? '<p class="small muted">Ці слова вже додано до «Слів» — вони з\'являтимуться на повторення (до ' + (+PG.S.settings.newPerDay || 0) + ' нових на день). Натисніть слово, щоб почути вимову.</p><div class="tblwrap"><table><tr><th>' + esc(PG.cap(N().ins)) + '</th><th>Українською</th><th>Примітка</th></tr>' +
+        l.vocab.map((w) => { const vw = PG.vWord(w); return '<tr><td>' + PG.rich('[[' + vw.mine + '|' + PG.sayText(vw.mine) + ']]') + (vw.other ? ' <span class="vv">' + esc(otherTag) + ' ' + PG.rich('[[' + vw.other + '|' + PG.sayText(vw.other) + ']]') + '</span>' : '') + '</td><td>' + esc(w[1]) + '</td><td class="small muted">' + PG.rich(vw.note) + '</td></tr>'; }).join('') + '</table></div>' : '<p>У цьому уроці немає нових слів — повторіть слова попередніх уроків.</p>') +
+        '<div class="row"><a class="btn" href="#/words">🃏 Повторювати слова</a><span class="spacer"></span><a class="btn primary" href="#/lesson/' + id + '/ex">До вправ →</a></div></div>';
+    } else if (tab === 'ex') {
+      PG.runExercises(body, l.ex, { saveKey: id, onFinish: (score) => {
+        st.ex = st.ex || {};
+        st.ex.best = Math.max(st.ex.best || 0, score);
+        if (score >= 80) st.ex.done = true;
+        PG.save();
+        const checks = $('.lesson-checks'); if (checks) checks.outerHTML = lessonChecks(l);
+      } });
+    } else if (tab === 'speak') {
+      body.innerHTML = '<div class="card"><h3>🔁 Shadowing: слухайте → повторюйте → записуйте себе</h3>' +
+        (l.say.length ? l.say.map((p, k) => '<div class="lesson-item" style="flex-wrap:wrap"><span>' + PG.rich('[[' + PG.v(p[0]) + ']]') + '<br><span class="small muted">' + esc(p[1]) + '</span></span><span class="spacer"></span><button class="btn small" data-slow="' + k + '">🐢</button><span class="rec" data-k="' + k + '"></span></div>').join('') : '<p class="muted">Візьміть фрази з попередніх уроків у вкладці «Розмова».</p>') +
+        '<h3 style="margin-top:16px">🗣️ Говоріть уголос</h3><ul>' + l.speak.map((s) => '<li>' + PG.rich(PG.v(s)) + '</li>').join('') + '</ul>' +
+        '<div class="row"><span class="rec-free"></span><span class="spacer"></span><button class="btn primary" id="sp-done">' + (st.speak ? '✓ Розмову виконано' : 'Позначити як виконане') + '</button></div></div>';
+      $$('.rec', body).forEach((el) => PG.recorderWidget(el));
+      PG.recorderWidget($('.rec-free', body));
+      $$('[data-slow]', body).forEach((b) => b.onclick = () => PG.TTS.say(PG.v(l.say[+b.dataset.slow][0]), 0.6));
+      $('#sp-done').onclick = () => { st.speak = true; PG.save(); PG.logActivity('speak'); renderLesson(id, 'speak'); };
+    } else if (tab === 'mission') {
+      body.innerHTML = '<div class="card"><h3>🎯 Місія в реальному житті</h3><p style="font-size:1.1rem">' + PG.rich(PG.v(l.mission)) + '</p>' +
+        '<p class="small muted">Не вийшло з першого разу? Це нормально — спробуйте ще раз наступного тижня. Головне — що ви спробували говорити й писати ' + esc(N().ins) + '.</p>' +
+        '<div class="row"><span class="spacer"></span><button class="btn primary" id="ms-done">' + (st.mission ? '✓ Місію виконано' : 'Я це зробив(ла)!') + '</button></div></div>';
+      $('#ms-done').onclick = () => { st.mission = true; PG.save(); PG.toast(PG.L.ui.missionDone); renderLesson(id, 'mission'); };
+    }
+  }
+
+  PG.views = { NAV, renderLanguages, renderToday, renderProgram, renderLessons, renderLesson, voiceBanner };
+})(window.PG);
+
+</script>
+<script>
+/* Екрани словника: #/dict — список і додавання, #/dict/io — імпорт та експорт, #/dict/practice — тренування */
+(function (PG) {
+  'use strict';
+  const esc = PG.esc, $ = (s, r) => (r || document).querySelector(s), $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
+  const view = () => document.getElementById('view');
+  const D = PG.Dict;
+  // autocorrect / spellcheck вимкнено: телефон «виправляв» би слова мови навчання, а підкреслення заважало б
+  const INP = 'autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"';
+  // Знімок для «Скасувати імпорт» живе лише до перезавантаження сторінки: це страховка на хвилину, а не історія змін
+  let lastImport = null;
+  const ins = () => PG.L.names.ins;
+  const tag = (v) => (PG.variantInfo(v) || {}).tag || '';
+
+  function statusPill(w) {
+    const c = D.card(w.word);
+    if (!c) return '<span class="pill gray">нове</span>';
+    const d = c.due - PG.today();
+    return d <= 0 ? '<span class="pill amber">повторити сьогодні</span>' : '<span class="pill green">через ' + d + ' дн.</span>';
+  }
+  function order() {
+    const idx = PG.S.dict.map((_, i) => i), how = PG.S.ui.dictSort, w = PG.S.dict;
+    if (how === 'az') idx.sort((a, b) => w[a].word.localeCompare(w[b].word, PG.L.htmlLang, { sensitivity: 'base' }));
+    else if (how === 'due') {
+      const due = (i) => { const c = D.card(w[i].word); return c ? c.due : -1e9; };
+      idx.sort((a, b) => due(a) - due(b));
+    } else idx.sort((a, b) => (w[b].added || '').localeCompare(w[a].added || '') || b - a);
+    return idx;
+  }
+  function rowHtml(w, i) {
+    const v = PG.variant(), o = PG.otherVariant(v);
+    return '<div class="dict-row" data-i="' + i + '" data-text="' + esc(PG.fold(w.word + ' ' + w.uk + ' ' + (w.note || '') + ' ' + (w.ex || ''))) + '">' +
+      '<div class="dict-main"><div class="dict-en">' + PG.sayHtml(w.word, PG.sayText(w.word)) + (w.ipa ? ' <span class="ipa">' + esc(w.ipa) + '</span>' : '') + ' ' + statusPill(w) + '</div>' +
+      '<div class="dict-uk">' + esc(w.uk) + (w.note ? ' <span class="small muted">· ' + esc(w.note) + '</span>' : '') + '</div>' +
+      (w.ex ? '<div class="dict-ex small">' + PG.sayHtml(w.ex) + '</div>' : '') + '</div>' +
+      '<div class="dict-actions"><button class="ic" data-act="say" title="Послухати">🔊</button><button class="ic" data-act="slow" title="Повільно">🐢</button>' +
+      (o ? '<button class="ic" data-act="alt" title="Послухати: ' + esc(PG.variantInfo(o).name) + ' вимова">' + esc(tag(o)) + '</button>' : '') +
+      (D.nativeUrl(w, v) ? '<button class="ic" data-act="native" title="Запис живої людини">🎙️</button>' : '') +
+      '<button class="ic" data-act="edit" title="Редагувати' + (D.canLookup() ? ', транскрипція' : '') + ', словники">✎</button></div></div>';
+  }
+  function editHtml(w) {
+    const links = PG.L.dict && PG.L.dict.links ? PG.L.dict.links(w.word) : [];
+    return '<div class="dict-edit"><div class="grid g2">' +
+      '<label class="small muted">' + esc(PG.cap(ins())) + '<input type="text" class="e-en" lang="' + PG.L.htmlLang + '" ' + INP + ' value="' + esc(w.word) + '"></label>' +
+      '<label class="small muted">Переклад<input type="text" class="e-uk" lang="uk" value="' + esc(w.uk) + '"></label>' +
+      '<label class="small muted">Примітка<input type="text" class="e-note" lang="uk" value="' + esc(w.note || '') + '"></label>' +
+      '<label class="small muted">Транскрипція<input type="text" class="e-ipa" ' + INP + ' value="' + esc(w.ipa || '') + '"></label></div>' +
+      '<label class="small muted">Приклад<input type="text" class="e-ex" lang="' + PG.L.htmlLang + '" ' + INP + ' value="' + esc(w.ex || '') + '"></label>' +
+      '<div class="row" style="margin-top:8px"><button class="btn primary small" data-act="save">Зберегти</button><button class="btn small" data-act="cancel">Скасувати</button>' +
+      (D.canLookup() ? '<button class="btn small" data-act="lookup" title="Знайти транскрипцію й запис носія">🔎 Транскрипція</button>' : '') +
+      links.map((l) => '<a class="btn small" href="' + esc(l[1]) + '" target="_blank" rel="noopener noreferrer" title="' + esc(l[2] || '') + '">' + esc(l[0]) + '</a>').join('') +
+      '<span class="spacer"></span><button class="btn small danger" data-act="del">✕ Видалити</button></div></div>';
+  }
+
+  function renderDict(sub) {
+    if (sub === 'io') return renderIO();
+    if (sub === 'practice') return renderPractice();
+    const n = PG.S.dict.length, q = PG.srsQueue('my'), v = PG.variant(), o = PG.otherVariant(v), U = PG.L.ui, look = D.canLookup();
+    view().innerHTML = PG.views.voiceBanner() +
+      '<div class="card"><div class="row"><h1 style="margin:0">📒 Мій словник</h1><span class="spacer"></span><span class="pill">' + n + ' ' + plural(n, 'слово', 'слова', 'слів') + '</span></div>' +
+      '<p class="small muted">' + esc(U.dictIntro) + ' 🔊 — вимова, 🐢 — повільно' + (o ? ', ' + esc(tag(o)) + ' — інший акцент' : '') + (look ? ', 🎙️ — запис живої людини (якщо є)' : '') + '. ✎ — редагувати' + (look ? ', транскрипція' : '') + ' і словники.</p>' +
+      '<div class="row"><a class="btn primary" href="#/words/review/my">🃏 Повторити (' + q.total + ')</a><a class="btn" href="#/dict/practice">🎯 Тренування</a><a class="btn" href="#/dict/io">⇅ Імпорт / експорт</a>' +
+      (D.missing().length ? '<button class="btn" id="d-fill" title="Знайти транскрипцію й записи носіїв для слів, у яких їх ще немає">🔎 Транскрипція (' + D.missing().length + ')</button>' : '') +
+      (o ? '<span class="spacer"></span><span class="small muted">' + esc(PG.cap(N_nom())) + ':</span><span class="seg" role="group" title="Варіант мови: голос, транскрипція й правопис у тренажері">' + PG.variants().map((x) => '<button data-acc="' + x.id + '" class="' + (x.id === v ? 'active' : '') + '" title="' + esc(PG.cap(x.name)) + '">' + PG.flagHtml(PG.code, x.id) + ' ' + esc(x.tag) + '</button>').join('') + '</span>' : '') + '</div>' +
+      (o ? '<p class="small muted" style="margin:8px 0 0">Ваші слова показуються так, як ви їх записали; транскрипція й записи носіїв підбираються під вибраний варіант.</p>' : '') + '</div>' +
+      '<div class="card" id="d-add"><h3 style="margin-top:0">＋ Додати слово</h3><div class="grid g2">' +
+      '<label class="small muted">' + esc(PG.cap(ins())) + '<span class="row nowrap"><input type="text" id="d-en" lang="' + PG.L.htmlLang + '" ' + INP + ' placeholder="' + esc(U.dictWordPh) + '" maxlength="200"><button class="btn" id="d-en-say" title="Послухати">🔊</button></span></label>' +
+      '<label class="small muted">Переклад<input type="text" id="d-uk" lang="uk" placeholder="' + esc(U.dictUkPh) + '" maxlength="300"></label></div><div id="d-kb"></div>' +
+      '<details id="d-more"><summary class="small">Примітка, приклад, транскрипція</summary><div class="grid g2" style="margin-top:6px">' +
+      '<input type="text" id="d-note" lang="uk" placeholder="' + esc(U.dictNotePh) + '" maxlength="300"><input type="text" id="d-ipa" ' + INP + ' placeholder="Транскрипція, напр. /ˈwɔːtə/" maxlength="100"></div>' +
+      '<input type="text" id="d-ex" lang="' + PG.L.htmlLang + '" ' + INP + ' placeholder="' + esc(U.dictExPh) + '" maxlength="500" style="margin-top:8px"></details>' +
+      '<div class="row" style="margin-top:10px"><button class="btn primary" id="d-add-btn">Додати</button>' + (look ? '<button class="btn" id="d-look" title="Знайти транскрипцію й запис носія у словниковій базі">🔎 Транскрипція</button>' : '') + '<span id="d-look-res" class="small muted"></span></div>' +
+      (look && PG.S.settings.autoIpa ? '<p class="small muted" style="margin:6px 0 0">Транскрипція й записи носіїв шукаються автоматично після додавання (' + esc(PG.L.dict.lookupNote || '') + '). Вимкнути — в ⚙️ «Налаштування».</p>' : '') + '</div>' +
+      '<div class="card"><div class="row"><input type="text" id="d-q" placeholder="Пошук ' + esc(ins()) + ' чи українською…" style="flex:1;min-width:180px"><select id="d-sort" style="width:auto">' +
+      [['new', 'Нові спершу'], ['az', 'А–Я'], ['due', 'За повторенням']].map((x) => '<option value="' + x[0] + '"' + (PG.S.ui.dictSort === x[0] ? ' selected' : '') + '>' + x[1] + '</option>').join('') + '</select></div><div id="d-list"></div></div>';
+    if (!n) $('#d-more').open = false;
+    drawList();
+    bindAdd();
+    $$('[data-acc]').forEach((b) => b.onclick = () => {
+      PG.setVariant(b.dataset.acc);
+      PG.toast('Тепер: ' + PG.variantInfo(PG.variant()).name + ' ' + N_nom() + ' ' + tag(PG.variant()));
+      renderDict();
+      PG.TTS.say(PG.variantInfo(PG.variant()).sample);
+    });
+    const fill = $('#d-fill');
+    if (fill) fill.onclick = async () => {
+      if (fill.dataset.busy) { fill.dataset.stop = '1'; return; }
+      fill.dataset.busy = '1';
+      const r = await D.enrichAll((i, n, found) => { fill.textContent = '🔎 ' + i + ' / ' + n + ' (знайдено ' + found + ') · стоп'; }, () => !!fill.dataset.stop || !document.body.contains(fill));
+      if (!document.body.contains(fill)) return;
+      PG.toast(r.offline ? 'Словниковий сервіс не відповідає (немає інтернету?)' : 'Знайдено транскрипцію для ' + r.found + ' з ' + r.total + ' слів', 4000);
+      renderDict();
+    };
+    $('#d-sort').onchange = (e) => { PG.S.ui.dictSort = e.target.value; PG.save(); drawList(); };
+    $('#d-q').oninput = filter;
+    $('#d-list').addEventListener('click', onListClick);
+  }
+  const N_nom = () => PG.L.names.nom;
+  function plural(n, one, few, many) {
+    const m10 = n % 10, m100 = n % 100;
+    return m10 === 1 && m100 !== 11 ? one : m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14) ? few : many;
+  }
+  function drawList() {
+    const el = $('#d-list');
+    if (!el) return;
+    el.innerHTML = PG.S.dict.length ? order().map((i) => rowHtml(PG.S.dict[i], i)).join('')
+      : '<p class="muted">Словник порожній. Додайте перше слово вгорі або <a href="#/dict/io">імпортуйте список</a> з файлу, таблиці чи тексту.</p>';
+    filter();
+  }
+  function filter() {
+    const inp = $('#d-q');
+    const v = inp ? PG.fold(inp.value.trim()) : '';
+    $$('#d-list .dict-row').forEach((r) => { r.style.display = !v || r.dataset.text.includes(v) ? '' : 'none'; });
+  }
+  function bindAdd() {
+    const en = $('#d-en'), uk = $('#d-uk'), res = $('#d-look-res');
+    let lastInp = en;
+    [en, $('#d-ex')].forEach((i) => i.addEventListener('focus', () => { lastInp = i; }));
+    const kb = PG.letterKeyboard(() => lastInp);
+    if (kb) $('#d-kb').appendChild(kb);
+    $('#d-en-say').onclick = () => { if (en.value.trim()) PG.TTS.say(PG.sayText(en.value)); else en.focus(); };
+    const look = $('#d-look');
+    if (look) look.onclick = async () => {
+      const w = en.value.trim();
+      if (!w) { PG.toast('Спершу введіть слово'); en.focus(); return; }
+      res.textContent = 'Шукаю…';
+      const r = await D.lookup(w);
+      if (r === undefined) { res.textContent = 'Сервіс не відповів (немає інтернету?)'; return; }
+      if (!r || (!r.ipa && !r.au)) { res.textContent = 'У словниковій базі цього слова немає — звучатиме синтезований голос.'; return; }
+      if (r.ipa) { $('#d-ipa').value = r.ipa; $('#d-more').open = true; }
+      res.innerHTML = (r.ipa ? esc(r.ipa) + ' · ' : '') + (r.au ? 'є запис носія: ' + Object.keys(r.au).map((k) => '<button class="btn small" data-native="' + esc(k) + '">🎙️ ' + esc(k.toUpperCase()) + '</button>').join(' ') : 'запису носія немає');
+      $$('[data-native]', res).forEach((b) => b.onclick = () => PG.TTS.playUrl(r.au[b.dataset.native]));
+    };
+    const add = () => {
+      const fields = { word: en.value, uk: uk.value, note: $('#d-note').value, ex: $('#d-ex').value, ipa: $('#d-ipa').value };
+      if (!fields.word.trim() || !fields.uk.trim()) { PG.toast('Заповніть слово і переклад'); (fields.word.trim() ? uk : en).focus(); return; }
+      const r = D.add(fields);
+      if (!r.ok) {
+        if (r.reason === 'dup') { PG.toast('«' + r.word.word + '» уже є у словнику: ' + r.word.uk, 3500); highlight(r.word.word); }
+        else if (r.reason === 'full') PG.toast('У словнику вже ' + D.MAX_WORDS + ' слів — більше не вміщується');
+        return;
+      }
+      ['#d-en', '#d-uk', '#d-note', '#d-ex', '#d-ipa'].forEach((s) => { $(s).value = ''; });
+      res.textContent = '';
+      PG.toast('Додано: ' + r.word.word + ' ✓');
+      drawList();
+      highlight(r.word.word);
+      if (!PG.touch()) en.focus();
+      if (D.canLookup() && PG.S.settings.autoIpa && !r.word.ipa) D.enrich(r.word.word).then((x) => { if (x && (x.ipa || x.au) && $('#d-list')) drawList(); });
+    };
+    $('#d-add-btn').onclick = add;
+    [en, uk, $('#d-note'), $('#d-ex'), $('#d-ipa')].forEach((i) => i.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); add(); } }));
+  }
+  function highlight(word) {
+    const i = D.index(word);
+    const row = $('#d-list .dict-row[data-i="' + i + '"]');
+    if (!row) return;
+    row.classList.add('flash-row');
+    row.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    setTimeout(() => row.classList.remove('flash-row'), 1600);
+  }
+  function onListClick(e) {
+    const b = e.target.closest('[data-act]');
+    if (!b) return;
+    const row = b.closest('.dict-row'), w = PG.S.dict[+row.dataset.i];
+    if (!w) return;
+    const v = PG.variant(), act = b.dataset.act;
+    if (act === 'say') PG.TTS.say(PG.sayText(w.word));
+    else if (act === 'slow') PG.TTS.say(PG.sayText(w.word), 0.6);
+    else if (act === 'alt') PG.TTS.say(PG.sayText(w.word), null, PG.otherVariant(v));
+    else if (act === 'native') PG.TTS.playUrl(D.nativeUrl(w, v));
+    else if (act === 'edit') {
+      row.innerHTML = editHtml(w);
+      row.classList.add('editing');
+      const del = $('[data-act="del"]', row);
+      PG.confirmClick(del, '✕ Точно видалити?', () => { D.remove(w.word); PG.toast('Видалено: ' + w.word); drawList(); });
+      if (!PG.touch()) $('.e-uk', row).focus();
+    } else if (act === 'cancel') drawList();
+    else if (act === 'save') {
+      const r = D.update(w.word, { word: $('.e-en', row).value, uk: $('.e-uk', row).value, note: $('.e-note', row).value, ex: $('.e-ex', row).value, ipa: $('.e-ipa', row).value });
+      if (!r.ok) { PG.toast(r.reason === 'dup' ? 'Таке слово вже є: ' + r.word.word : 'Заповніть слово і переклад'); return; }
+      PG.toast('Збережено ✓');
+      drawList(); highlight(r.word.word);
+    } else if (act === 'lookup') {
+      b.textContent = '🔎 Шукаю…';
+      D.lookup($('.e-en', row).value || w.word).then((r) => {
+        b.textContent = '🔎 Транскрипція';
+        if (r === undefined) { PG.toast('Сервіс не відповів (немає інтернету?)'); return; }
+        if (!r || (!r.ipa && !r.au)) { PG.toast('У словниковій базі цього слова немає'); return; }
+        if (r.ipa) $('.e-ipa', row).value = r.ipa;
+        // Запис носія зберігаємо одразу, а транскрипцію учень бачить у полі й може виправити перед «Зберегти»
+        if (r.au) D.update(w.word, { au: r.au });
+        PG.toast(r.au ? 'Знайдено транскрипцію і запис носія 🎙️' : 'Знайдено транскрипцію');
+      });
+    }
+  }
+
+  function renderIO() {
+    const n = PG.S.dict.length, share = D.canShareFiles();
+    view().innerHTML = '<div class="card"><div class="row small muted"><a href="#/dict">← Мій словник</a></div><h1>⇅ Імпорт та експорт словника</h1>' +
+      '<p class="small muted">Словник (' + esc(N_nom()) + ') живе в браузері на цьому пристрої. Щоб перенести його на телефон чи інший браузер — експортуйте файл тут і імпортуйте його там. Прогрес уроків не переноситься, лише словник.</p></div>' +
+      '<div class="card"><h2>⬇️ Експорт</h2><p>У словнику <b>' + n + '</b> ' + plural(n, 'слово', 'слова', 'слів') + '.</p>' +
+      '<label class="row small"><input type="checkbox" id="x-prog" checked> Разом із прогресом повторення (коли яке слово повторювати)</label>' +
+      '<div class="row" style="margin-top:8px"><button class="btn primary" id="x-json"' + (n ? '' : ' disabled') + '>⬇️ Файл словника (.json)</button>' +
+      (share ? '<button class="btn" id="x-share"' + (n ? '' : ' disabled') + '>📤 Поділитися файлом</button>' : '') +
+      '<button class="btn" id="x-csv"' + (n ? '' : ' disabled') + '>⬇️ Таблиця (.csv)</button><button class="btn" id="x-tsv"' + (n ? '' : ' disabled') + '>📋 Копіювати як таблицю</button></div>' +
+      '<ul class="small muted"><li><b>.json</b> — повна копія (з транскрипцією, записами носіїв і прогресом). Для перенесення на інший пристрій і резервної копії.</li>' +
+      '<li><b>.csv</b> — для Excel, Google Таблиць, Anki, Quizlet. <b>📋 Копіювати як таблицю</b> — вставте в Google Таблиці чи Excel (Ctrl+V), колонки розкладуться самі.</li>' +
+      '<li>Перенести на телефон: «Поділитися» → надішліть файл собі в Telegram чи пошту → на телефоні збережіть його → тут «📂 Вибрати файл».</li></ul></div>' +
+      '<div class="card"><h2>⬆️ Імпорт</h2><p class="small muted">Файл словника (.json), таблиця (.csv, .tsv) або текст (.txt). Перед імпортом ви побачите, що саме додасться.</p>' +
+      '<div class="row"><label class="btn primary file-btn">📂 Вибрати файл<input type="file" id="i-file" accept=".json,.csv,.tsv,.txt,application/json,text/csv,text/plain,text/tab-separated-values" hidden></label></div>' +
+      '<p class="small" style="margin:12px 0 4px">…або вставте список, по слову на рядок:</p>' +
+      '<textarea id="i-text" rows="6" lang="' + PG.L.htmlLang + '" ' + INP + ' placeholder="' + esc(PG.L.ui.dictImportPh) + '"></textarea>' +
+      '<div class="row" style="margin-top:8px"><button class="btn" id="i-parse">Розібрати текст</button></div><div id="i-preview"></div></div>' +
+      '<div class="card"><h3>🗑️ Очистити словник</h3><p class="small muted">Видаляє всі слова словника цієї мови і їхній прогрес повторення на цьому пристрої. Спершу збережіть файл словника. Уроки, налаштування й словники інших мов не зачіпаються.</p>' +
+      '<button class="btn danger" id="i-clear"' + (n ? '' : ' disabled') + '>Очистити словник</button></div>';
+    const prog = () => $('#x-prog').checked;
+    $('#x-json').onclick = () => { D.download(D.fileName('json'), D.toJson(prog()), 'application/json'); PG.toast('Файл збережено в «Завантаження»'); };
+    if (share) $('#x-share').onclick = () => D.share(D.fileName('json'), D.toJson(prog()), 'application/json').catch((e) => { if (e && e.name !== 'AbortError') PG.toast('Не вдалося поділитися: ' + (e.name || e)); });
+    // BOM потрібен Excel, інакше він відкриє UTF-8 як кракозябри
+    $('#x-csv').onclick = () => { D.download(D.fileName('csv'), '﻿' + D.toCsv(), 'text/csv;charset=utf-8'); PG.toast('Таблицю збережено в «Завантаження»'); };
+    $('#x-tsv').onclick = async () => { PG.toast(await D.copy(D.toTsv()) ? 'Скопійовано — вставте в таблицю (Ctrl+V)' : 'Не вдалося скопіювати'); };
+    $('#i-file').onchange = (e) => {
+      const f = e.target.files[0];
+      if (!f) return;
+      if (f.size > 10 * 1024 * 1024) { PG.toast('Файл завеликий (понад 10 МБ)'); return; }
+      const rd = new FileReader();
+      rd.onload = () => preview(D.parse(rd.result, f.name), f.name);
+      rd.onerror = () => PG.toast('Не вдалося прочитати файл');
+      rd.readAsText(f, 'utf-8');
+      e.target.value = '';
+    };
+    $('#i-parse').onclick = () => {
+      const t = $('#i-text').value;
+      if (!t.trim()) { PG.toast('Вставте текст у поле'); return; }
+      preview(D.parse(t), '');
+    };
+    PG.confirmClick($('#i-clear'), 'Точно видалити всі ' + n + ' ' + plural(n, 'слово', 'слова', 'слів') + '?', () => { D.clear(); PG.toast('Словник очищено'); renderIO(); });
+    if (lastImport && lastImport.lang === PG.code) showUndo();
+  }
+  const KIND = { json: 'файл словника', csv: 'таблиця CSV', tsv: 'таблиця', text: 'текст', empty: 'порожньо' };
+  function preview(parsed, source) {
+    const p = D.plan(parsed), el = $('#i-preview');
+    const total = p.fresh.length + p.same.length + p.conflict.length;
+    if (!total) {
+      el.innerHTML = '<div class="note">Не знайдено жодного слова з перекладом' + (p.bad.length ? ': ' + p.bad.length + ' ' + plural(p.bad.length, 'рядок', 'рядки', 'рядків') + ' не розпізнано. Приклад: <code>' + esc(p.bad[0].text) + '</code>' : '') +
+        '. Кожен рядок має містити слово і переклад через «—», «-», «;», «=» чи табуляцію.</div>';
+      return;
+    }
+    // Файл словника іншої мови не забороняємо (учень міг вести змішаний список), але попереджаємо
+    const other = p.lang && p.lang !== PG.code ? PG.langInfo(p.lang) : null;
+    const row = (r, st, cls) => '<tr><td>' + esc(r.word) + '</td><td>' + esc(r.uk) + '</td><td><span class="pill ' + cls + '">' + st + '</span></td></tr>';
+    const sample = [].concat(p.conflict.map((x) => row(x.row, 'інший переклад: ' + esc(x.cur.uk), 'amber')), p.fresh.map((r) => row(r, 'нове', 'green')), p.same.map((x) => row(x.row, 'вже є', 'gray'))).slice(0, 40);
+    el.innerHTML = '<div class="card inner"><h3>Перегляд: ' + (source ? esc(source) + ' (' + KIND[p.kind] + ')' : 'вставлений ' + KIND[p.kind]) + '</h3>' +
+      (other ? '<p class="note small">⚠️ Це словник іншої мови: ' + esc(other.name.toLowerCase()) + '. Ви зараз вчите ' + esc(PG.L.names.acc) + ' — слова потраплять у словник саме цієї мови.</p>' : '') +
+      '<div class="row small"><span class="pill green">нових: ' + p.fresh.length + '</span><span class="pill gray">вже є: ' + p.same.length + '</span><span class="pill amber">з іншим перекладом: ' + p.conflict.length + '</span>' +
+      (p.dup ? '<span class="pill gray">повторів у файлі: ' + p.dup + '</span>' : '') + (p.bad.length ? '<span class="pill red">не розпізнано: ' + p.bad.length + '</span>' : '') + '</div>' +
+      (p.conflict.length ? '<p class="small" style="margin-bottom:4px"><b>Слова з іншим перекладом:</b></p><div class="row small">' +
+        [['keep', 'залишити мій переклад'], ['replace', 'замінити перекладом з файлу'], ['merge', 'об\'єднати переклади']].map((o, k) => '<label><input type="radio" name="i-conf" value="' + o[0] + '"' + (k ? '' : ' checked') + '> ' + o[1] + '</label>').join('') + '</div>' : '') +
+      (p.withCards ? '<label class="row small" style="margin-top:6px"><input type="checkbox" id="i-prog" checked> Узяти прогрес повторення з файлу (для слів, яких ви ще не повторювали)</label>' : '') +
+      '<div class="tblwrap" style="max-height:320px;overflow:auto;margin-top:8px"><table><tr><th>' + esc(PG.cap(ins())) + '</th><th>Переклад</th><th>Стан</th></tr>' + sample.join('') + '</table></div>' +
+      (total > 40 ? '<p class="small muted">Показано 40 з ' + total + '.</p>' : '') +
+      (p.bad.length ? '<details class="small"><summary>Нерозпізнані рядки (' + p.bad.length + ')</summary><ul>' + p.bad.slice(0, 20).map((b) => '<li>рядок ' + b.line + ': <code>' + esc(b.text) + '</code></li>').join('') + '</ul></details>' : '') +
+      '<div class="row" style="margin-top:10px"><button class="btn primary" id="i-go"' + (p.fresh.length || p.conflict.length || p.same.length ? '' : ' disabled') + '>Імпортувати</button><button class="btn" id="i-cancel">Скасувати</button></div></div>';
+    $('#i-cancel').onclick = () => { el.innerHTML = ''; };
+    $('#i-go').onclick = () => {
+      const conf = $('input[name="i-conf"]:checked'), progEl = $('#i-prog');
+      const r = D.apply(p, { conflict: conf ? conf.value : 'keep', progress: progEl ? progEl.checked : true });
+      lastImport = Object.assign(r, { lang: PG.code });
+      el.innerHTML = '';
+      $('#i-text').value = '';
+      renderIO();
+      PG.toast('Імпортовано ✓');
+    };
+  }
+  function showUndo() {
+    const r = lastImport;
+    $('#i-preview').innerHTML = '<div class="good"><b>Імпорт завершено.</b> Додано слів: ' + r.added + ', оновлено перекладів: ' + r.updated + ', доповнено полів: ' + r.filled +
+      (r.skipped ? ', не вмістилося: ' + r.skipped : '') + '.<div class="row" style="margin-top:8px"><a class="btn primary small" href="#/dict">📒 До словника</a><button class="btn small" id="i-undo">↩ Скасувати імпорт</button></div></div>';
+    $('#i-undo').onclick = () => { D.undo(r.snapshot); lastImport = null; PG.toast('Імпорт скасовано'); renderIO(); };
+  }
+
+  function renderPractice() {
+    const n = PG.S.dict.length;
+    view().innerHTML = PG.views.voiceBanner() + '<div class="card"><div class="row small muted"><a href="#/dict">← Мій словник</a></div><h1>🎯 Тренування словника</h1>' +
+      '<p class="muted">10 завдань зі слів словника: диктант (почути й написати), переклад українською → ' + esc(ins()) + ', вибір перекладу. Спершу — слова, які пора повторити, і нові.</p></div><div id="dp-body"></div>';
+    if (!n) { $('#dp-body').innerHTML = '<div class="card center"><p>Словник порожній.</p><a class="btn primary" href="#/dict">＋ Додати слова</a></div>'; return; }
+    PG.runExercises($('#dp-body'), D.practiceSpecs(10), { drill: true });
+  }
+
+  PG.renderDict = renderDict;
+})(window.PG);
+
+</script>
+<script>
+/* Екрани «Слова», «Тренажер чисел», «Розмова», «Довідник», «Налаштування»; вибір мови й варіанта, маршрутизація та запуск */
+(function (PG) {
+  'use strict';
+  const esc = PG.esc, $ = (s, r) => (r || document).querySelector(s), $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
+  const view = () => document.getElementById('view');
+  const N = () => PG.L.names;
+  const otherTag = () => (PG.variantInfo(PG.otherVariant()) || {}).tag || '';
+
+  // only: 'my' — повторювати лише слова мого словника (#/words/review/my)
+  function renderWords(sub, only) {
+    sub = sub || 'review';
+    only = only === 'my' ? 'my' : '';
+    const c = PG.srsCounts(only);
+    view().innerHTML = PG.views.voiceBanner() + '<div class="card"><h1>🃏 Слова' + (only ? ': мій словник' : '') + '</h1><div class="row small"><span class="pill">' + c.due + ' на повторення</span><span class="pill green">' + c.known + ' у пам\'яті</span><span class="pill gray">' + c.unseen + ' нових чекають</span></div>' +
+      '<div class="subtabs"><button data-s="review" class="' + (sub === 'review' && !only ? 'active' : '') + '">Повторення</button><button data-s="review/my" class="' + (sub === 'review' && only ? 'active' : '') + '">Лише мій словник</button><button data-s="list" class="' + (sub === 'list' ? 'active' : '') + '">Усі слова</button><button data-go="dict">📒 Мій словник →</button></div></div><div id="w-body"></div>';
+    $$('[data-s]').forEach((b) => b.onclick = () => { location.hash = '#/words/' + b.dataset.s; });
+    $('[data-go]').onclick = () => { location.hash = '#/dict'; };
+    const body = $('#w-body');
+    if (sub === 'list') wordList(body);
+    else review(body, only);
+  }
+  function review(body, only) {
+    const q = PG.srsQueue(only);
+    const queue = q.due.concat(q.fresh);
+    if (!queue.length) {
+      const any = PG.srsCounts(only).all;
+      body.innerHTML = '<div class="card center"><h2>🎉 На сьогодні все!</h2><p class="muted">' + (any ? 'Повертайтеся завтра. Нові слова з\'являються, коли ви відкриваєте нові уроки або додаєте слова в словник.'
+        : only ? 'У словнику ще немає слів.' : 'Відкрийте перший урок або додайте слова в «📒 Мій словник».') + '</p>' +
+        (only ? '<a class="btn primary" href="#/dict">📒 До словника</a>' : '<a class="btn primary" href="#/lesson/' + PG.currentLesson().id + '">До уроку</a>') + '</div>';
+      return;
+    }
+    let i = 0;
+    const again = [];
+    const show = () => {
+      const w = queue[i] || again.shift();
+      if (!w) return review(body, only);
+      const dirSet = PG.S.settings.dir;
+      const toTl = dirSet === 'uk' ? true : dirSet === 'tl' ? false : Math.random() < 0.5;
+      const isNew = !PG.S.cards[w.id];
+      const said = PG.sayText(w.word);
+      body.innerHTML = '<div class="card ex-box"><div class="row small muted"><span>' + (isNew ? '<span class="pill amber">нове</span>' : '') + (w.lesson === 'my' ? ' <span class="pill">📒</span>' : '') + ' ' + (toTl ? 'Як це ' + esc(N().ins) + '?' : 'Що це означає?') + '</span><span class="spacer"></span>залишилось: ' + (queue.length - i + again.length) + '</div>' +
+        '<div class="flash"><div class="front">' + (toTl ? esc(w.uk) : esc(w.word)) + '</div>' + (!toTl && w.ipa ? '<div class="ipa">' + esc(w.ipa) + '</div>' : '') +
+        '<div class="back" style="display:none"><div class="big-phrase">' + esc(w.word) + '</div>' + (w.alt ? '<div class="vv">' + esc(otherTag()) + ' ' + esc(w.alt) + '</div>' : '') +
+        (toTl && w.ipa ? '<div class="ipa">' + esc(w.ipa) + '</div>' : '') + (toTl ? '' : '<div>' + esc(w.uk) + '</div>') +
+        // Примітки слів уроку — розмітка уроку (транскрипції US / UK), примітки мого словника — текст учня, його лише екрануємо
+        (w.note ? '<div class="small muted">' + (w.lesson === 'my' ? esc(w.note) : PG.rich(w.note)) + '</div>' : '') + (w.ex ? '<div class="small">' + PG.sayHtml(w.ex) + '</div>' : '') + '</div></div>' +
+        '<div class="row" style="justify-content:center"><button class="btn" id="fl-say">🔊</button><button class="btn primary" id="fl-show">Показати відповідь<span class="kbd"> (пробіл)</span></button></div>' +
+        '<div class="srs-btns" style="display:none">' + [[1, 'Знову'], [2, 'Важко'], [3, 'Добре'], [4, 'Легко']].map((g) => '<button class="btn" data-g="' + g[0] + '">' + g[1] + '<small>' + PG.nextIntervalLabel(w, g[0]) + '<span class="kbd"> · ' + g[0] + '</span></small></button>').join('') + '</div></div>';
+      const reveal = () => { $('.back', body).style.display = ''; $('#fl-show').style.display = 'none'; $('.srs-btns', body).style.display = ''; PG.TTS.say(said); };
+      $('#fl-say').onclick = () => PG.TTS.say(said);
+      if (!toTl) PG.TTS.say(said);
+      $('#fl-show').onclick = reveal;
+      $$('[data-g]', body).forEach((b) => b.onclick = () => grade(+b.dataset.g));
+      const grade = (g) => { PG.srsGrade(w, g); if (g === 1) again.push(w); if (queue[i] === w) i++; show(); };
+      body._key = (e) => {
+        if (e.code === 'Space' && $('#fl-show') && $('#fl-show').style.display !== 'none') { e.preventDefault(); reveal(); }
+        else if (/^[1-4]$/.test(e.key) && $('.srs-btns', body).style.display !== 'none') grade(+e.key);
+      };
+    };
+    document.onkeydown = (e) => { if (body._key && !/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName)) body._key(e); };
+    show();
+  }
+  function wordList(body) {
+    const words = PG.allWords();
+    body.innerHTML = '<div class="card"><input type="text" id="w-q" placeholder="Пошук ' + esc(N().ins) + ' чи українською…"><div class="tblwrap" style="margin-top:10px"><table id="w-t"><tr><th>' + esc(PG.cap(N().ins)) + '</th><th>Українською</th><th>Наступне повторення</th></tr>' +
+      words.map((w) => { const c = PG.S.cards[w.id]; const d = c ? c.due - PG.today() : null;
+        return '<tr><td>' + PG.sayHtml(w.word, PG.sayText(w.word)) + (w.alt ? ' <span class="vv">' + esc(otherTag()) + ' ' + esc(w.alt) + '</span>' : '') + (w.lesson === 'my' ? ' <span class="small">📒</span>' : '') + '</td><td>' + esc(w.uk) + '</td><td class="small muted">' + (c ? (d <= 0 ? 'сьогодні' : 'через ' + d + ' дн.') : 'нове') + '</td></tr>'; }).join('') +
+      '</table></div>' + (words.length ? '' : '<p class="muted">Поки порожньо — відкрийте урок або додайте слова в словник.</p>') + '</div>';
+    $('#w-q').oninput = (e) => { const v = PG.fold(e.target.value); $$('#w-t tr').slice(1).forEach((tr) => { tr.style.display = PG.fold(tr.textContent).includes(v) ? '' : 'none'; }); };
+  }
+
+  function renderDrill(mode) {
+    const U = PG.L.ui, drills = PG.L.drills || [], back = U.drillBack || ['#/lessons', '← Уроки'];
+    view().innerHTML = PG.views.voiceBanner() + '<div class="card"><div class="row small muted"><a href="' + esc(back[0]) + '">' + esc(back[1]) + '</a></div><h1>' + esc(U.drillTitle || '🔢 Тренажер чисел') + '</h1>' +
+      '<p class="muted">' + esc(U.drillIntro || '') + '</p>' +
+      '<div class="row">' + drills.map((d) => '<a class="btn small' + (d[0] === mode ? ' primary' : '') + '" href="#/drill/' + d[0] + '">' + esc(d[1]) + '</a>').join('') + '</div></div><div id="dr-body"></div>';
+    const d = drills.find((x) => x[0] === mode);
+    if (!d) { $('#dr-body').innerHTML = '<div class="card center muted">' + (drills.length ? 'Виберіть режим угорі.' : 'Для цієї мови тренажера чисел ще немає.') + '</div>'; return; }
+    const pool = drills.filter((x) => x[2]).map((x) => x[2]);
+    const specs = Array.from({ length: 10 }, () => Object.assign({ t: 'g' }, d[2] || pool[Math.floor(Math.random() * pool.length)]));
+    PG.runExercises($('#dr-body'), specs, { drill: true });
+  }
+
+  function renderSpeak() {
+    const opened = PG.lessons.filter((l) => PG.S.lessons[l.id] && PG.S.lessons[l.id].opened);
+    const pool = (opened.length ? opened : PG.lessons.slice(0, 1));
+    const phrases = pool.flatMap((l) => l.say.map((p) => ({ tl: PG.v(p[0]), uk: p[1], l: l.num })));
+    const prompts = pool.flatMap((l) => l.speak.map((s) => ({ s, l: l.num })));
+    if (!phrases.length || !prompts.length) { view().innerHTML = '<div class="card"><h1>🎙️ Розмова</h1><p class="muted">Відкрийте перший урок — тут з\'являться фрази для практики.</p></div>'; return; }
+    const U = PG.L.ui;
+    view().innerHTML = PG.views.voiceBanner() + '<div class="card"><h1>🎙️ Розмова</h1><p class="muted">Розмова — ваш пріоритет №1. Тут фрази з уроків, які ви вже відкрили. Слухайте, повторюйте, записуйте себе й порівнюйте з диктором.</p></div>' +
+      '<div class="card"><h3>🔁 Shadowing</h3><div class="center"><div class="big-phrase" id="sh-en"></div><div class="muted" id="sh-uk"></div><div class="small muted" id="sh-l"></div></div>' +
+      '<div class="row" style="justify-content:center;margin-top:10px"><button class="btn" id="sh-play">🔊 Слухати</button><button class="btn" id="sh-slow">🐢 Повільно</button><span id="sh-rec"></span><button class="btn primary" id="sh-next">Наступна →</button></div>' +
+      '<p class="small muted center">Схема: послухайте 2 рази → скажіть разом із диктором → скажіть самі → запишіть → порівняйте.' + (U.speakTip ? ' ' + esc(U.speakTip) : '') + '</p></div>' +
+      '<div class="card"><h3>🗣️ Говоріть 1 хвилину</h3><p id="pr-text" style="font-size:1.1rem"></p><div class="row"><span class="timer" id="pr-t">1:00</span><button class="btn primary" id="pr-go">▶ Старт</button><button class="btn" id="pr-next">Інше завдання</button><span id="pr-rec"></span></div>' +
+      '<p class="small muted">Не зупиняйтеся, навіть якщо помиляєтеся. ' + esc(U.speakHint || '') + '</p></div>' +
+      '<div class="card"><h3>🎯 Мої місії</h3>' + PG.lessons.map((l) => '<div class="lesson-item"><span class="num">' + esc(l.num) + '</span><span class="small">' + PG.rich(PG.v(l.mission)) + '</span><span class="spacer"></span>' + (PG.S.lessons[l.id] && PG.S.lessons[l.id].mission ? '<span class="done-mark">✓</span>' : '<a class="btn small" href="#/lesson/' + l.id + '/mission">→</a>') + '</div>').join('') + '</div>';
+    let k = 0; const order = PG.shuffle(phrases);
+    const cur = () => order[k % order.length];
+    const drawPh = () => { $('#sh-en').textContent = cur().tl; $('#sh-uk').textContent = cur().uk; $('#sh-l').textContent = 'урок ' + cur().l; };
+    drawPh();
+    $('#sh-play').onclick = () => PG.TTS.say(cur().tl);
+    $('#sh-slow').onclick = () => PG.TTS.say(cur().tl, 0.6);
+    $('#sh-next').onclick = () => { k++; drawPh(); PG.TTS.say(cur().tl); };
+    PG.recorderWidget($('#sh-rec'));
+    PG.recorderWidget($('#pr-rec'));
+    let pk = Math.floor(Math.random() * prompts.length), pInt = null;
+    const drawPr = () => { $('#pr-text').innerHTML = PG.rich(PG.v(prompts[pk % prompts.length].s)); };
+    drawPr();
+    $('#pr-next').onclick = () => { pk++; drawPr(); };
+    $('#pr-go').onclick = () => {
+      clearInterval(pInt); const end = Date.now() + 60000, el = $('#pr-t');
+      // Рахуємо від часу старту: на телефоні з вимкненим екраном тики setInterval зупиняються
+      pInt = setInterval(() => {
+        const left = Math.max(0, Math.ceil((end - Date.now()) / 1000));
+        el.textContent = Math.floor(left / 60) + ':' + String(left % 60).padStart(2, '0');
+        if (left <= 0) { clearInterval(pInt); PG.toast('Хвилина минула! 👏'); PG.logActivity('speak'); }
+      }, 250);
+    };
+  }
+
+  function renderRef() {
+    if (!PG.ref.length) { view().innerHTML = '<div class="card"><h1>📚 Довідник</h1><p class="muted">Довідник ще порожній.</p></div>'; return; }
+    view().innerHTML = '<div class="card"><h1>📚 Довідник</h1><input type="text" id="r-q" placeholder="' + esc(PG.L.ui.refSearch || 'Пошук у таблицях…') + '">' +
+      '<div class="row small" style="margin-top:8px">' + PG.ref.map((r) => '<a href="#/ref" data-jump="' + esc(r.id) + '">' + esc(r.title) + '</a>').join(' · ') + '</div></div>' +
+      PG.ref.map((r) => '<div class="card" id="ref-' + esc(r.id) + '"><h2>' + esc(r.title) + '</h2>' + PG.rich(PG.v(r.html, null, { nv: r.nv })) + '</div>').join('');
+    $$('[data-jump]').forEach((a) => a.onclick = (e) => { e.preventDefault(); document.getElementById('ref-' + a.dataset.jump).scrollIntoView({ behavior: 'smooth' }); });
+    $('#r-q').oninput = (e) => {
+      const v = PG.fold(e.target.value.trim());
+      $$('#view table tr').forEach((tr) => { if (tr.querySelector('th')) return; tr.style.display = !v || PG.fold(tr.textContent).includes(v) ? '' : 'none'; });
+    };
+  }
+
+  function renderSettings() {
+    const s = PG.S.settings, L = PG.L, U = L.ui, info = PG.langInfo(PG.code);
+    const T = PG.TTS, voices = T.voices, ONLINE = T.ONLINE, v = PG.variant(), vi = PG.variantInfo(v);
+    const known = s.voice === ONLINE || voices.some((x) => x.name === s.voice);
+    const opt = (val, label, sel) => '<option value="' + esc(val) + '"' + (sel ? ' selected' : '') + '>' + esc(label) + '</option>';
+    const vopt = (x) => opt(x.name, x.name + (x.localService === false && !/online/i.test(x.name) ? ' (онлайн)' : ''), known && x.name === s.voice);
+    const group = (acc, title) => { const list = voices.filter((x) => T.accentOf(x) === acc); return list.length ? '<optgroup label="' + esc(title) + '">' + list.map(vopt).join('') + '</optgroup>' : ''; };
+    const hasVoice = vi ? voices.some((x) => T.accentOf(x) === v) : voices.length > 0;
+    view().innerHTML = '<div class="card"><h1>⚙️ Налаштування</h1>' +
+      '<h3>🌍 Мова навчання</h3><div class="row">' + PG.flagHtml(PG.code, v) + ' <b>' + esc(info.name) + '</b><span class="small muted">· ' + esc(info.native) + '</span><span class="spacer"></span><a class="btn small" href="#/languages">Змінити мову</a></div>' +
+      '<p class="small muted" style="margin:6px 0 10px">Налаштування нижче — для цієї мови. Прогрес кожної мови зберігається окремо.</p>' +
+      (vi ? '<h3>' + esc(U.variantTitle || 'Варіант мови') + '</h3>' + PG.variantPicker() + '<p class="small muted" style="margin:6px 0 10px">' + esc(U.variantSettings || '') + '</p>' : '') +
+      '<h3>🔊 Голос</h3><select id="st-voice">' +
+        opt('', 'Автоматично: ' + (hasVoice ? 'найкращий голос системи' : 'онлайн-голос Google'), !known) +
+        (vi ? group(v, PG.cap(vi.name) + ' (' + vi.tag + ')') + group('other', 'Інші (' + N().nom + ')') : voices.map(vopt).join('')) +
+        opt(ONLINE, 'Google — онлайн (' + (vi ? vi.name : N().nom) + ')', s.voice === ONLINE) + '</select>' +
+      '<p class="small muted" style="margin:6px 0 0">Зараз говорить: <b>' + esc(T.label()) + '</b>. ' +
+        (hasVoice ? '' : 'Голосу цієї мови' + (vi ? ' (' + vi.tag + ')' : '') + ' в системі немає, тому говорить онлайн-голос Google — потрібен інтернет. ') +
+        esc(U.voiceNote || '') + ' Онлайн-голосу надсилається лише текст ' + esc(N().gen) + ', який треба озвучити.</p>' +
+      '<details class="small" style="margin-top:6px"' + (voices.length ? '' : ' open') + '><summary>Як додати ' + esc(N().adj) + ' голос, що працює без інтернету</summary><ul>' + (U.voiceHelp || '') + '</ul></details>' +
+      '<div class="row" style="margin-top:8px"><label>Швидкість: <b id="st-rate-v">' + esc(s.rate) + '</b></label><input type="range" id="st-rate" min="0.5" max="1.2" step="0.05" value="' + esc(s.rate) + '" style="flex:1"><button class="btn small" id="st-test">Перевірити</button></div>' +
+      '<h3>✍️ Вправи</h3><label class="row"><input type="checkbox" id="st-strict"' + (s.strict ? ' checked' : '') + '> ' + esc(U.strict) + '</label>' +
+      '<h3>🃏 Слова</h3><div class="row"><label>Нових слів на день:</label><input type="number" id="st-new" min="0" max="50" value="' + esc(s.newPerDay) + '" style="width:90px"></div>' +
+      '<div class="row" style="margin-top:8px"><label>Напрям карток:</label><select id="st-dir" style="width:auto"><option value="mix">мікс</option><option value="tl">' + esc(N().nom) + ' → українська</option><option value="uk">українська → ' + esc(N().nom) + '</option></select></div>' +
+      (PG.Dict.canLookup() ? '<h3>📒 Мій словник</h3><label class="row"><input type="checkbox" id="st-ipa"' + (s.autoIpa ? ' checked' : '') + '> Автоматично шукати транскрипцію й записи носіїв для нових слів (' + esc(L.dict.lookupNote || '') + ')</label>' : '') +
+      '</div><div class="card"><h3>💾 Збереження прогресу</h3><p class="small muted">Прогрес зберігається в браузері на цьому пристрої (у сховищі цього сайту), для кожної мови окремо. На іншому пристрої чи в іншому браузері прогрес окремий; мій словник можна перенести через <a href="#/dict/io">⇅ Імпорт / експорт</a>.</p>' +
+      storageStatus() +
+      progressSummary() +
+      '<h3>↺ Почати наново</h3><p class="small muted">Скидання стосується лише цієї мови й не скасовується. Кожна кнопка просить підтвердження (друге натискання). Мій словник ці кнопки не видаляють.</p>' +
+      '<div class="row"><button class="btn" id="st-rl" title="Уроки, вправи, місії, пропуски">Скинути уроки</button><button class="btn" id="st-rw" title="Інтервали повторення; самі слова й словник лишаються">Скинути повторення слів</button>' +
+      '<span class="spacer"></span><button class="btn danger" id="st-reset" title="Усе в цій мові, крім налаштувань і мого словника">Почати ' + esc(N().acc) + ' з нуля</button></div></div>' +
+      '<div class="card"><h3>📲 Встановити як додаток</h3>' + (PG.isInstalled() ? '<p class="small"><span class="done-mark">✓</span> Тренажер відкрито як встановлений додаток.</p>' : installHelp()) +
+      '<p class="small muted" style="margin:8px 0 0">Версія тренажера: ' + esc(PG.BUILD || 'розробка (src/)') + '</p></div>';
+    $('#st-dir').value = s.dir;
+    if (vi) PG.bindVariantPicker(view(), () => renderSettings());
+    $('#st-voice').onchange = (e) => { s.voice = e.target.value; PG.save(); renderSettings(); PG.TTS.say(U.voiceHello); };
+    $('#st-rate').oninput = (e) => { s.rate = +e.target.value; $('#st-rate-v').textContent = s.rate; PG.save(); };
+    $('#st-test').onclick = () => PG.TTS.say(U.voiceTest);
+    $('#st-strict').onchange = (e) => { s.strict = e.target.checked; PG.save(); };
+    const ipa = $('#st-ipa'); if (ipa) ipa.onchange = (e) => { s.autoIpa = e.target.checked; PG.save(); };
+    $('#st-new').onchange = (e) => { s.newPerDay = Math.max(0, Math.min(50, +e.target.value || 0)); PG.save(); };
+    $('#st-dir').onchange = (e) => { s.dir = e.target.value; PG.save(); };
+    bindInstall(view());
+    const per = $('#st-persist');
+    if (per) per.onclick = () => PG.Storage.check(true).then((p) => { PG.toast(p ? 'Постійне сховище увімкнено ✓' : 'Браузер поки не дозволив. Встановіть тренажер як додаток — це найнадійніше.', 5000); renderSettings(); });
+    PG.confirmClick($('#st-rl'), 'Точно скинути уроки?', () => { PG.resetLessons(); PG.toast('Прогрес уроків скинуто'); renderSettings(); });
+    PG.confirmClick($('#st-rw'), 'Точно скинути повторення?', () => { PG.resetWords(); PG.toast('Повторення слів скинуто'); renderSettings(); });
+    PG.confirmClick($('#st-reset'), 'Точно почати з нуля?', () => {
+      const keep = { settings: PG.S.settings, dict: PG.S.dict };
+      PG.resetState(); Object.assign(PG.S, keep); PG.save();
+      PG.toast('Прогрес скинуто — починаємо спочатку! Словник збережено.'); location.hash = '#/today';
+    });
+  }
+  function storageStatus() {
+    const p = PG.Storage.persisted, st = PG.store;
+    const row = (k, v) => '<tr><td>' + k + '</td><td>' + v + '</td></tr>';
+    const ok = '<span class="done-mark">✓</span> ';
+    return '<div class="tblwrap"><table>' +
+      row('Постійне сховище', p === true ? ok + 'увімкнено: браузер не видалить прогрес сам'
+        : p === false ? '⚠️ ні: браузер може видалити дані сайту, коли на пристрої забракне місця. Найнадійніше — встановити тренажер як додаток (див. нижче). <button class="btn small" id="st-persist">Спробувати ввімкнути</button>'
+          : 'невідомо: браузер про це не повідомляє') +
+      row('Запис', st.newer ? '⚠️ прогрес записала новіша версія тренажера. Оновіть сторінку з інтернетом; доти зміни тут не зберігаються.'
+        : st.failed ? '⚠️ останнє збереження не вдалося (' + esc(st.failed.name || st.failed) + '). Перевірте, чи не заблоковано для сайту файли cookie й дані сайтів і чи є місце на пристрої.'
+          : st.broken ? '⚠️ збережений прогрес не вдалося прочитати (' + esc(st.broken.name || st.broken.message || st.broken) + '). Якщо він був, його копія лежить у сховищі сайту під ключем <code>' + esc(st.key) + '-broken</code>.'
+            : ok + 'працює') +
+      '</table></div><p class="small muted">Прогрес зникне, якщо в браузері очистити «Файли cookie та інші дані сайтів» для цього сайту. Тому час від часу зберігайте файл словника.</p>';
+  }
+  function installHelp() {
+    return '<p class="small">Встановлений тренажер відкривається з головного екрана чи меню «Пуск» в окремому вікні й працює без інтернету (крім онлайн-голосу й пошуку транскрипції), а браузер надійніше зберігає його прогрес.</p>' +
+      (PG.Install.prompt ? '<button class="btn primary install-btn">📲 Встановити</button>' : '') +
+      '<ul class="small"><li><b>Android (Chrome)</b>: меню ⋮ → «Додати на головний екран» → «Установити».</li>' +
+      '<li><b>Комп\'ютер (Chrome / Edge)</b>: значок «Установити» праворуч в адресному рядку (або в меню ⋮).</li>' +
+      '<li><b>iPhone / iPad</b>: кнопка «Поділитися» → «На екран „Додому“».</li></ul>';
+  }
+  function bindInstall(root) {
+    $$('.install-btn', root).forEach((b) => { b.onclick = () => PG.Install.run(); });
+  }
+  // persisted === null означає «ще не відповів або не підтримує» — тоді порада була б зайвим нагадуванням
+  PG.fillInstallTip = function () {
+    const el = document.getElementById('install-tip'); if (!el) return;
+    const show = PG.A.ui.installTip && !PG.isInstalled() && PG.Storage.persisted === false;
+    el.innerHTML = show ? '<div class="tip" style="margin:0 0 14px"><div class="row"><b>📲 Встановіть тренажер як додаток</b><span class="spacer"></span><button class="btn small" id="it-hide" title="Більше не показувати">✕</button></div>' +
+      '<p class="small" style="margin:6px 0">Так браузер не видалить ваш прогрес і словники, коли на пристрої забракне місця, а тренажер відкриватиметься з головного екрана й без інтернету.</p>' +
+      (PG.Install.prompt ? '<button class="btn primary small install-btn">📲 Встановити</button>'
+        : '<p class="small muted" style="margin:0">Chrome: меню ⋮ → «Додати на головний екран» (телефон) або значок «Установити» в адресному рядку (комп\'ютер). Докладніше — у ⚙️ «Налаштування».</p>') + '</div>' : '';
+    if (!show) return;
+    bindInstall(el);
+    $('#it-hide', el).onclick = () => { PG.A.ui.installTip = false; PG.saveApp(); el.innerHTML = ''; };
+  };
+
+  function progressSummary() {
+    const L = PG.lessons;
+    const cur = PG.currentLesson();
+    const done = L.filter((l) => PG.lessonDone(l.id)).length, skipped = L.filter((l) => PG.lessonSkipped(l.id)).length;
+    const runs = L.filter((l) => PG.S.lessons[l.id] && PG.S.lessons[l.id].run).length;
+    const c = PG.srsCounts();
+    const days = Object.keys(PG.S.days).length;
+    const mods = Object.values(PG.S.modules).filter(Boolean).length;
+    return '<div class="tblwrap" style="margin-top:10px"><table><tr><th colspan="2">Що збережено зараз (' + esc(N().nom) + ')</th></tr>' +
+      '<tr><td>Уроки</td><td>пройдено ' + done + ', пропущено ' + skipped + ' з ' + L.length + (runs ? '; незавершених підходів до вправ: ' + runs : '') + '</td></tr>' +
+      (cur ? '<tr><td>Поточний урок</td><td>' + esc(cur.num + ' · ' + PG.v(cur.title)) + '</td></tr>' : '') +
+      '<tr><td>Слова</td><td>у повторенні ' + c.known + ', на сьогодні ' + c.due + ', нових чекають ' + c.unseen + '</td></tr>' +
+      '<tr><td>Мій словник</td><td>' + PG.S.dict.length + ' слів</td></tr>' +
+      (mods ? '<tr><td>Модулі</td><td>позначено ' + mods + '</td></tr>' : '') +
+      '<tr><td>Активність</td><td>днів із заняттями: ' + days + ', серія: ' + PG.streak() + '</td></tr></table></div>';
+  }
+
+  PG.setVariant = function (v) {
+    const s = PG.S.settings, T = PG.TTS;
+    if (!PG.variantInfo(v)) return;
+    s.variant = v;
+    // Вибраний голос іншого варіанта читав би британське слово з американською вимовою — повертаємо автовибір
+    const chosen = T.voices.find((x) => x.name === s.voice);
+    if (chosen && T.accentOf(chosen) !== v && T.accentOf(chosen) !== 'other') s.voice = '';
+    PG.S.ui.variantAsked = true;
+    PG.save();
+    applyFlag();
+  };
+  PG.variantPicker = function (big) {
+    const v = PG.variant();
+    return '<div class="row variant-pick">' + PG.variants().map((x) => '<button class="btn' + (big ? ' big' : '') + (x.id === v && (PG.S.ui.variantAsked || !big) ? ' primary' : '') + '" data-variant="' + x.id + '">' + PG.flagHtml(PG.code, x.id) + ' ' + esc(x.label) + '</button>').join('') + '</div>';
+  };
+  PG.bindVariantPicker = function (root, after) {
+    $$('[data-variant]', root).forEach((b) => b.onclick = () => {
+      PG.setVariant(b.dataset.variant);
+      const vi = PG.variantInfo(PG.variant());
+      PG.toast('Тепер: ' + vi.name + ' ' + N().nom + ' ' + vi.tag);
+      after();
+      PG.TTS.say(vi.sample);
+    });
+  };
+
+  // Іконка вкладки — прапор мови й варіанта учня; PNG-іконки встановленого додатка одні для всіх мов (логотип)
+  function applyFlag() {
+    const el = $('#lang-flag'), icon = document.querySelector('link[rel="icon"]');
+    if (el) el.classList.toggle('square', !PG.code);
+    if (!PG.code) {
+      if (el) { el.innerHTML = PG.LOGO; el.title = 'Polyglot'; }
+      if (icon && PG.LOGO) icon.href = 'data:image/svg+xml,' + encodeURIComponent(PG.LOGO);
+      return;
+    }
+    const svg = PG.flagSvg(PG.code, PG.variant()), vi = PG.variantInfo(PG.variant());
+    if (el) { el.innerHTML = svg; el.title = 'Ви вчите ' + (vi ? vi.acc + ' ' : '') + N().acc + ' — змінити мову'; }
+    if (icon) icon.href = 'data:image/svg+xml,' + encodeURIComponent(svg);
+  }
+  // Колір кнопок і посилань — з реєстру мови: так видно, яку мову зараз відкрито
+  function applyTheme() {
+    const info = PG.langInfo(PG.code), th = info && info.theme;
+    let el = document.getElementById('lang-theme');
+    if (!el) { el = document.createElement('style'); el.id = 'lang-theme'; document.head.appendChild(el); }
+    el.textContent = th ? ':root{--blue:' + th.light + '}@media (prefers-color-scheme:dark){:root{--blue:' + th.dark + '}}' : '';
+  }
+  function applyLang() {
+    document.documentElement.dataset.lang = PG.code || '';
+    const name = $('#lang-name');
+    if (name) name.textContent = PG.code ? PG.langInfo(PG.code).name : '';
+    applyFlag();
+    applyTheme();
+    document.body.classList.toggle('no-lang', !PG.code);
+    if (PG.code) PG.TTS.load();
+  }
+  PG.applyLang = applyLang;
+  PG.switchLang = async function (code) {
+    try {
+      PG.TTS.stop();
+      await PG.activate(code);
+    } catch (e) {
+      console.error(e);
+      PG.toast('⚠️ ' + (e && e.message || e), 6000);
+      route();
+      return;
+    }
+    applyLang();
+    PG.toast(PG.L.ui.hello.replace(/\s*👋/, '') + ' Тепер ви вчите ' + N().acc + '.');
+    if (location.hash === '#/today') route(); else location.hash = '#/today';
+  };
+
+  function route(keepScroll) {
+    const y = window.scrollY;
+    document.onkeydown = null;
+    if (PG.Rec.active()) PG.Rec.stop();
+    const parts = (location.hash || '#/today').replace(/^#\//, '').split('/');
+    let page = parts[0] || 'today';
+    // Поки мову не вибрано, будь-яка адреса веде на вибір мови: без пакета іншим екранам нічого показати
+    if (!PG.L) page = 'languages';
+    const owner = { lesson: 'lessons', drill: 'lessons' }[page] || page;
+    $$('nav.tabs a').forEach((a) => a.classList.toggle('active', a.dataset.page === owner));
+    const V = PG.views;
+    try {
+      if (page === 'languages') V.renderLanguages();
+      else if (page === 'program') V.renderProgram();
+      else if (page === 'lessons') V.renderLessons();
+      else if (page === 'lesson') V.renderLesson(parts[1], parts[2]);
+      else if (page === 'words') renderWords(parts[1], parts[2]);
+      else if (page === 'dict') PG.renderDict(parts[1]);
+      else if (page === 'speak') renderSpeak();
+      else if (page === 'drill') renderDrill(parts[1]);
+      else if (page === 'ref') renderRef();
+      else if (page === 'settings') renderSettings();
+      else V.renderToday();
+    } catch (e) {
+      console.error(e);
+      view().innerHTML = '<div class="card"><h2>Щось пішло не так</h2><pre class="small">' + esc(e && e.stack || e) + '</pre></div>';
+    }
+    window.scrollTo(0, keepScroll ? y : 0);
+  }
+  PG.route = route;
+  const currentPage = () => (location.hash || '').replace(/^#\//, '').split('/')[0];
+  // Учень, що саме набирає слово у формі словника чи імпорту, не має втратити текст через перемальовування
+  const typing = () => { const a = document.activeElement; return !!(a && /^(INPUT|TEXTAREA)$/.test(a.tagName) && a.value); };
+
+  // Нова версія вже керує сторінкою (sw.js робить skipWaiting), але відкритий екран ще зі старим кодом
+  function showUpdateBar() {
+    if (document.querySelector('.update-bar')) return;
+    const bar = document.createElement('div');
+    bar.className = 'update-bar';
+    bar.innerHTML = '🔄 Вийшла нова версія тренажера <button class="btn small primary">Оновити</button>';
+    bar.querySelector('button').onclick = () => location.reload();
+    document.body.appendChild(bar);
+  }
+  // У src/ (розробка) PG.BUILD немає: там service worker закешував би окремі файли й ховав би свіжі правки
+  function registerWorker() {
+    if (!PG.BUILD || !('serviceWorker' in navigator) || !/^https?:$/.test(location.protocol)) return;
+    navigator.serviceWorker.addEventListener('message', (e) => {
+      if (e.data && e.data.type === 'activated' && e.data.version !== PG.BUILD) showUpdateBar();
+    });
+    navigator.serviceWorker.register('sw.js').then((reg) => {
+      // Встановлений додаток на телефоні може жити днями без перезавантаження — перевіряємо оновлення при кожному поверненні
+      document.addEventListener('visibilitychange', () => { if (!document.hidden) reg.update().catch(() => {}); });
+    }).catch((e) => console.warn('Service worker не зареєстровано', e));
+  }
+
+  async function init() {
+    const logo = document.getElementById('app-logo');
+    PG.LOGO = logo ? logo.innerHTML : '';
+    const nav = document.getElementById('nav'), header = document.querySelector('header.top');
+    nav.innerHTML = PG.views.NAV.map((n) => '<a href="#/' + n[0] + '" data-page="' + n[0] + '" title="' + n[2] + '"' + (n[4] ? ' class="wide-only"' : '') + '><span>' + n[1] + '</span> <span class="lbl">' + n[2] + '</span><span class="lbl-s">' + n[3] + '</span></a>').join('');
+    // Ширина підписів залежить від шрифту й емодзі системи, тож місце не вгадується брейкпоінтом, а вимірюється
+    const fitNav = () => {
+      header.classList.remove('nav-compact', 'nav-tight');
+      if (matchMedia('(max-width:700px)').matches) return;
+      for (const c of ['nav-compact', 'nav-tight']) { if (nav.scrollWidth <= nav.clientWidth + 1) break; header.classList.add(c); }
+    };
+    let fitting = 0;
+    window.addEventListener('resize', () => { cancelAnimationFrame(fitting); fitting = requestAnimationFrame(fitNav); });
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitNav);
+    document.addEventListener('click', (e) => {
+      const el = e.target.closest('.say');
+      if (el) PG.TTS.say(el.dataset.say);
+    });
+    // Список голосів і інтернет з'являються/зникають після рендеру. Повний перерендер — лише в налаштуваннях:
+    // на інших екранах він збив би таймер або вправу, тож там лише додаємо чи прибираємо банер
+    let lastState = null;
+    PG.TTS.listeners.push(() => {
+      if (!PG.L) return;
+      const state = PG.code + ':' + PG.TTS.voices.length + ':' + (PG.TTS.settled ? 1 : 0) + ':' + navigator.onLine;
+      if (lastState === null) { lastState = state; return; }
+      if (state === lastState) return;
+      lastState = state;
+      if (currentPage() === 'settings') { route(true); return; }
+      const b = document.querySelector('.voice-banner'), show = PG.TTS.silent();
+      if (show && !b) view().insertAdjacentHTML('afterbegin', PG.views.voiceBanner());
+      else if (!show && b) b.remove();
+    });
+    // Відповідь браузера про сховище й можливість встановлення приходять уже після першого рендеру
+    const envChanged = () => { if (!PG.L) return; if (currentPage() === 'settings') route(true); else PG.fillInstallTip(); };
+    PG.Storage.listeners.push(envChanged);
+    PG.Install.listeners.push(envChanged);
+    // Прогрес змінився в іншій вкладці. Прихована вкладка перемальовується, лише коли до неї повернуться:
+    // інакше вона, наприклад, почала б озвучувати картку слова у фоні
+    let stale = false;
+    PG.onExternalChange = () => { if (document.hidden || typing()) stale = true; else route(true); };
+    document.addEventListener('visibilitychange', () => { if (!document.hidden && stale) { stale = false; route(true); } });
+    window.addEventListener('hashchange', () => route());
+    applyLang();
+    fitNav();
+    let failed = false;
+    if (PG.A.lang) {
+      try { await PG.activate(PG.A.lang); } catch (e) {
+        // Без інтернету й без кешу пакет не завантажиться: учень має бачити причину, а не порожній вибір мови
+        failed = true;
+        console.error(e);
+        view().innerHTML = '<div class="card"><h2>Не вдалося відкрити мову</h2><p>' + esc(e && e.message || e) + '</p><div class="row"><button class="btn primary" onclick="location.reload()">Спробувати ще раз</button><a class="btn" href="#/languages">Інша мова</a></div></div>';
+      }
+    }
+    applyLang();
+    PG.TTS.init();
+    if (PG.S && !PG.S.start) { PG.S.start = PG.today(); PG.save(); }
+    if (!failed) route();
+    fitNav();
+    PG.Storage.check(true);
+    registerWorker();
+  }
+  document.addEventListener('DOMContentLoaded', init);
+})(window.PG);
+
+</script>
+</body>
+</html>
